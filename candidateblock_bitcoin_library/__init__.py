@@ -19,6 +19,7 @@ See http://scikit-learn.org for complete documentation.
 import logging
 
 import candidateblock_bitcoin_library.base58 as base58
+import candidateblock_bitcoin_library.hash as hash
 
 from .address_prefix import AddressPrefix
 from .keys import Keys
@@ -27,6 +28,6 @@ from .version import __version__ as version
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-__all__ = ["AddressPrefix", "base58", "Keys"]
+__all__ = ["AddressPrefix", "base58", "hash", "Keys"]
 
 __version__ = version

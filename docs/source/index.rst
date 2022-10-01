@@ -11,7 +11,7 @@ Welcome to CandidateBlock Bitcoin Library's documentation!
    :caption: Contents:
 
    intro
-   candidateblock_bitcoin_library
+   modules
    examples
 
 
