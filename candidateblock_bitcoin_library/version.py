@@ -1,0 +1,5 @@
+# Copyright (c) 2022 CandidateBlock
+# Distributed under the MIT software license, see the accompanying
+# file LICENSE or http://www.opensource.org/licenses/mit-license.php
+
+__version__ = "0.0.dev0"
