@@ -59,7 +59,8 @@ class Keys(object):
     # Private Key ************************************************************************************************************
     # ************************************************************************************************************************
 
-    def _random_secret(self) -> int:
+    @staticmethod
+    def _random_secret() -> int:
         """Generate a random number for use as Private Key
 
         Generate a cryptographically secure random number

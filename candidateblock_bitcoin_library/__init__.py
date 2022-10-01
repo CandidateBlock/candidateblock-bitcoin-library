@@ -6,15 +6,10 @@
 Candidate Block Bitcoin framework, easy to learn, fast to code
 ==============================================================
 
-sklearn is a Python module integrating classical machine
-learning algorithms in the tightly-knit world of scientific Python
-packages (numpy, scipy, matplotlib).
+cbl is a Python module aims to provide simple and efficient solutions
+to learning and using the Bitcoin protocol.
 
-It aims to provide simple and efficient solutions to learning problems
-that are accessible to everybody and reusable in various contexts:
-machine-learning as a versatile tool for science and engineering.
-
-See http://scikit-learn.org for complete documentation.
+See https://candidateblock-bitcoin-library.readthedocs.io for complete documentation.
 """
 import logging
 
