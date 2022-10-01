@@ -1,9 +1,9 @@
 # if we want Sphinx to autogenerate documentation from the comments of
 # our code using the autodoc extension, we have to point Sphinx to the
 # directory in which our Python source codes reside.
-import os
-import sys
-sys.path.insert(0, os.path.abspath('../../candidateblock_bitcoin_library/'))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('../../candidateblock_bitcoin_library/'))
 
 # $ sphinx-apidoc -f -o docs/source candidateblock_bitcoin_library
 # $ sphinx-build -b html docs/source/ docs/build/html
