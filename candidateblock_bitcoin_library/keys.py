@@ -17,13 +17,13 @@ class Keys(object):
 
     Bitcoin has a Private Key (that should remain secret) and a
     Public Key that can be shared.
-    A Private key is just a random 256-Bit number (with some size
+    A Private key is just a random 256-Bit (32-byte) number (with some size
     limitation due to discrete Elliptic Curve).
-    A Public is generated from a one way cryptographic function
+    A Public key is generated from a one way cryptographic function
     called secp256k1 which uses an Elliptic Curve.
 
     Attributes:
-        private_key: An integer storing Private key as 256-Bit number
+        private_key: An integer storing Private key as 256-Bit (32-byte) number
         public_key: A point (x, y) on the Elliptic Curve
 
     """
@@ -38,8 +38,8 @@ class Keys(object):
     def _hex256(input_hex: str) -> str:
         """Pad 256-Bit Hex sting to always be even number of chars
 
-        256-Bit hex number should have 64 chars (256 / 4).
-        4-Bits = 0-f in Hex.
+        256-Bit (32-byte) hex number should have 64 chars (256 / 4).
+        4-Bit = 0-f in Hex.
 
         Args:
             input_hex (str): Hex number
@@ -69,10 +69,10 @@ class Keys(object):
             int: 256-Bit Random Number
         """
 
-        # Collect 256 bits of random data from the OS's cryptographically secure
+        # Collect 256 bits (32-bytes) of random data from the OS's cryptographically secure
         # random number generator
         byte_array = os.urandom(32)
-        # Convert 32 bytes into hex string then back to integer (256 bits)
+        # Convert 256-bit (32-byte) into hex string then back to integer
         return int(byte_array.hex(), 16)
 
     def generate_private_key(self) -> int:
@@ -86,6 +86,7 @@ class Keys(object):
         Returns:
             int: Raw 256-Bit (32-Byte) Private Key = Random Number
         """
+        # Large prime number
         _p = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
         # Generate a random private key
         valid_private_key = False
@@ -110,11 +111,11 @@ class Keys(object):
     def get_private_key_hex(self) -> str:
         """Get Private Key Hex
 
-        Convert Private Key from 256-Bit integer to 64-Char Hex string
+        Convert Private Key from 256-Bit (32-Byte) integer to 64-Char Hex string
         with "0" padding. (Each Hex character holds 4-Bits, 256 / 4 = 64 Chars)
 
         Returns:
-            str: 64-Byte Hex Private Key
+            str: 64-Char (32-Byte) Hex Private Key
         """
         hex_str = hex(self.private_key)[2:]  # remove 0x from Hex string
         # Return hex string 64 chars long => 256 bits, "0" padding
@@ -134,7 +135,7 @@ class Keys(object):
     def get_private_key_wif(self) -> str:
         """Get Private Key WIF in "Uncompressed" Format
 
-        Convert Private Key from 256-Bit integer to Base58 encoded
+        Convert Private Key from 256-Bit (32-Byte) integer to Base58 encoded
         string in Wallet Import Format (WIF).
         "Uncompressed" => PUBLIC keys generated from private key
         should be "Uncompressed".
@@ -142,19 +143,19 @@ class Keys(object):
         Uncompressed WIF
 
         Payload = Version Prefix (Number of Bytes varies)
-        Payload = Payload + Private Key (64-Byte Hex Private Key)
+        Payload = Payload + Private Key 256-bit (64-Byte) Hex Private Key)
         Hex = Hex + Checksum (first 4-Bytes of double_sha256 Payload)
         Base58 Encode Check (Hex) - leading char is "5"
 
         Returns:
             str: Base58 encoded
         """
-        return base58.b58encode_check(s_hex=self.get_private_key_hex(), version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
+        return base58.b58check_encode(s_hex=self.get_private_key_hex(), version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
 
     def get_private_key_wif_compressed(self) -> str:
         """Get Private Key WIF in "Compressed" Format
 
-        Convert Private Key from 256-Bit integer to Base58 encoded
+        Convert Private Key from 256-Bit (32-Byte) integer to Base58 encoded
         string in "Compressed" Wallet Import Format (WIF).
         "Compressed" => PUBLIC keys generated from private key should
         be in "Compressed" format.
@@ -163,14 +164,14 @@ class Keys(object):
 
         Payload = Version Prefix (Number of Bytes varies)
         Payload = Payload + Private Key (64-Byte Hex Private Key)
-        Payload = Payload + "01" (1-Byte Hex suffix added to Private Key)
+        Payload = Payload + "01" (1-Byte Hex suffix added to Private Key for compressed flag)
         Hex = Hex + Checksum (4-Bytes of double_sha256 of Payload)
         Base58 Encode Check (Hex) - leading char is "K" or "L"
 
         Returns:
             str: Base58 encoded
         """
-        return base58.b58encode_check(s_hex=self.get_private_key_hex() + "01", version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
+        return base58.b58check_encode(s_hex=self.get_private_key_hex() + "01", version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
 
     def decode_private_key_wif_compressed(self, private_key_wif_b58check: str) -> bool:
         """_summary_
@@ -182,31 +183,35 @@ class Keys(object):
             bool: _description_
         """
         # Char len 76 => Compressed, 74 => Not Compressed
-        # 2 for prefix
-        # 64 for 256-Bit key
-        # 2 for compressed (optional)
-        # 8 for checksum
+        # 2-Bytes for prefix
+        # 64-Bytes for Payload (256-Bit [64-Byte[] key)
+        # 2-Bytes for compressed (optional)
+        # 8-Bytes for checksum
         raw_hex = base58.b58decode(s_base58=private_key_wif_b58check)
         wif_hex = raw_hex
+        if len(wif_hex) == 76:
+            compressed_key = True
+        else:
+            compressed_key = False
         prefix = wif_hex[:2]
         payload = wif_hex[2:-8]
         wif_hex = wif_hex[2:]
         pk = wif_hex[:64]
         wif_hex = wif_hex[64:]
-        compressed = wif_hex[:2]
+        if compressed_key:
+            compressed = wif_hex[:2]  # Compressed
+        else:
+            compressed = "00"   # Not compressed
         wif_hex = wif_hex[2:]
         checksum = wif_hex
         # Verify checksum
-        new_checksum = hash.double_sha256(s_hex=raw_hex[:-8])[:8]
-        if new_checksum == checksum:
-            print("matches")
-        else:
-            print("error")
+        double_sha256_hex, new_checksum = hash.double_sha256(s_hex=prefix + payload)
         self.private_key = int(pk, 16)
         self.public_key = None
         data = {"base58": private_key_wif_b58check,
                 "hex": raw_hex,
                 "checksum": checksum,
+                "checksum_match": new_checksum == checksum,
                 "prefix": prefix,
                 "payload": payload,
                 "compressed": compressed}
@@ -259,14 +264,14 @@ class Keys(object):
         """Get Public Key "Uncompressed" (x, y) point as a Hex String
 
         Convert the Public Key (x, y) point to a Hex string.
-        Each point coordinate is 256-Bit = 32-Byte = 64 Char Hex string
+        Each point coordinate is 256-Bit (32-Byte, 64-Char Hex string)
 
         "Uncompressed" Public Key Format
 
-        Hex = "04" Hex prefix 8-Bit, 1-Byte, 2-Char Hex -> "Uncompressed"
-        Hex = Hex + X Coordinate as 256-Bit, 32-Byte, 64-Char Hex
-        Hex = Hex + Y Coordinate as 256-Bit, 32-Byte, 64-Char Hex
-        Hex result string = 520-Bit, 65-Byte, 130-Char Hex
+        Hex = "04" Hex prefix 8-Bit (1-Byte, 2-Char Hex) -> "Uncompressed"
+        Hex = Hex + X Coordinate as 256-Bit (32-Byte, 64-Char Hex)
+        Hex = Hex + Y Coordinate as 256-Bit (32-Byte, 64-Char Hex)
+        Hex result string = 520-Bit (65-Byte, 130-Char Hex)
 
         Returns:
             str: "04" + "point x (Hex)" + "point y (Hex)"
@@ -311,16 +316,16 @@ class Keys(object):
 
         "Compressed" Public Key Format
 
-        "02" Hex prefix 8-Bit, 1-Byte, 2-Char Hex byte if y is even
-        "03" Hex prefix 8-Bit, 1-Byte, 2-Char Hex byte if y is odd
+        "02" Hex prefix 8-Bit (1-Byte, 2-Char Hex) if y is even
+        "03" Hex prefix 8-Bit (1-Byte, 2-Char Hex) if y is odd
 
         Hex = Even or Odd Hex prefix -> "Compressed"
-        Hex = Hex + X Coordinate as 256-Bit, 32-Byte, 64-Char Hex
-        Hex result string = 264-Bit, 33-Byte, 66-Char Hex
+        Hex = Hex + X Coordinate as 256-Bit (32-Byte, 64-Char Hex)
+        Hex result string = 264-Bit (33-Byte, 66-Char Hex)
 
         This results in nearly a 50% size reduction compared to the
-        "Uncompressed" Private Key size of 520-Bit, 65-Byte, 130-Char Hex
-        66 / 130 = 50.8%
+        "Uncompressed" Private Key size of 520-Bit (65-Byte, 130-Char Hex)
+        264 / 520 = 50.8%
 
         Returns:
             str: "02" or "03" + "point x (Hex)"
@@ -336,16 +341,16 @@ class Keys(object):
         """Get Public Key "Compressed" (x, y) point as a Base58 String
 
         Take "Compressed" Public Key Hex string and convert to a
-        Bitcoin address encoded in Base58
+        Base58 encoded string
 
         Returns:
             str: "Compressed" Public Key encoded in Base58
         """
         public_key_compressed_hex = self.get_public_key_compressed_hex()
-        return base58.b58encode_check(public_key_compressed_hex, version_prefix=AddressPrefix.PUBKEY_HASH_ADDRESS.value)
+        return base58.b58check_encode(public_key_compressed_hex, version_prefix=AddressPrefix.PUBKEY_HASH_ADDRESS.value)
 
     def get_public_compressed_key_bitcoin_address(self) -> str:
-        """Get Public Key "Compressed" (x, y) point as a Base58 String
+        """Get Public Key "Compressed" (x, y) point as a Bitcoin Address
 
         Take "Compressed" Public Key Hex string and convert to a
         Bitcoin address encoded in Base58

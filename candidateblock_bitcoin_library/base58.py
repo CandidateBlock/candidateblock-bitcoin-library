@@ -17,7 +17,7 @@ import re
 import candidateblock_bitcoin_library.hash as hash
 
 __all__ = ['b58encode', 'b58decode',
-           'b58encode_check', 'b58decode_check']
+           'b58check_encode', 'b58check_decode']
 
 # All alphanumeric characters except for "0", "I", "O", and "l"
 _b58alphabet: str = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -113,7 +113,7 @@ def b58decode(s_base58: str) -> str:
     return s_hex
 
 
-def b58encode_check(s_hex: str, version_prefix: str) -> str:
+def b58check_encode(s_hex: str, version_prefix: str) -> str:
     """Encode a hex string using Base58Check
 
     Base58Check
@@ -135,14 +135,37 @@ def b58encode_check(s_hex: str, version_prefix: str) -> str:
     return b58encode(s_hex=full_hex)
 
 
-def b58decode_check(s_hex: str, version_prefix: str) -> str:
+def b58check_decode(s_base58: str) -> dict:
     """_summary_
 
     Args:
-        s_hex (str): _description_
-        version_prefix (str): _description_
+        s_base58 (str): Base58Check encoded string
 
     Returns:
-        str: _description_
+        dict: checksum (hex str), payload (hex str), version (hex str)
     """
-    pass
+    # Char len 76 => Compressed, 74 => Not Compressed
+    # 2-Bytes for prefix
+    # 64-Bytes for Payload (256-Bit [64-Byte[] key)
+    # 2-Bytes for compressed (optional)
+    # 8-Bytes for checksum
+    raw_hex = b58decode(s_base58=s_base58)
+    checksum = raw_hex[-8:]
+    # prefix is usually 1-Byte except xpub, xprv, tpub, tprv, bc1, tb1
+    first_byte = raw_hex[:2]
+    if first_byte != "04":
+        prefix_byte_char_len = 2
+    else:
+        prefix_byte_char_len = 8
+    prefix = raw_hex[:prefix_byte_char_len]
+    payload = raw_hex[prefix_byte_char_len:-8]
+    # Verify checksum
+    double_sha256_hex, new_checksum = hash.double_sha256(s_hex=prefix + payload)
+    data = {"b58check": s_base58,
+            "checksum": checksum,
+            "checksum_match": new_checksum == checksum,
+            "hex": raw_hex,
+            "payload": payload,
+            "prefix": prefix,
+            }
+    return data

@@ -86,35 +86,35 @@ class TestBase58:
     # encode_check tests
     # **************************************************
     def test_encode_check_one(self):
-        assert cbl.base58.b58encode_check(s_hex="f54a5851e9372b87810a8e60cdd2e7cfd80b6e31",
+        assert cbl.base58.b58check_encode(s_hex="f54a5851e9372b87810a8e60cdd2e7cfd80b6e31",
                                           version_prefix=cbl.AddressPrefix.PUBKEY_HASH_ADDRESS.value) == "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs"
 
     def test_encode_check_two(self):
         # Private key in WIF base58 check output format
-        assert cbl.base58.b58encode_check(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd",
+        assert cbl.base58.b58check_encode(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd",
                                           version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn"
 
     def test_encode_check_three(self):
         # Private key in WIF-compressed base58 check output format, extra 01 at end of input
-        assert cbl.base58.b58encode_check(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd01",
+        assert cbl.base58.b58check_encode(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd01",
                                           version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ"
 
     def test_encode_check_four(self):
         # Mainnet Private key in WIF not compressed base58 check output format
-        assert cbl.base58.b58encode_check(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
+        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
                                           version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "5Kdc3UAwGmHHuj6fQD1LDmKR6J3SwYyFWyHgxKAZ2cKRzVCRETY"
 
     def test_encode_check_five(self):
         # Mainnet Private key in WIF compressed base58 check output format, extra 01 at end of input
-        assert cbl.base58.b58encode_check(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
+        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
                                           version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6"
 
     def test_encode_check_six(self):
         # Testnet Private key in WIF not compressed base58 check output format
-        assert cbl.base58.b58encode_check(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
+        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
                                           version_prefix=cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF.value) == "93QEdCzUrzMRsnbx2YuF6MsNjxQA6iWSrv9e2wX4NM4UmYzUsLn"
 
     def test_encode_check_seven(self):
         # Mainnet Private key in WIF compressed base58 check output format, extra 01 at end of input
-        assert cbl.base58.b58encode_check(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
+        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
                                           version_prefix=cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF.value) == "cVbZ8ovhye9AoAHFsqobCf7LxbXDAECy9Kb8TZdfsDYMZGBUyCnm"

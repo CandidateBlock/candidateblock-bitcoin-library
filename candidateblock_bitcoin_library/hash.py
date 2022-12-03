@@ -22,9 +22,9 @@ def double_sha256(s_hex: str) -> Tuple[str, str]:
     """Compute the 'double-SHA256' and checksum.
 
     Input hex string is coverted to byte array then hashed with
-    Secure Hash Algorithm (SHA), specifically the 256-Bit version,
-    twice resutling in 32-byte double hash.
-    Checksum is the first four bytes (8-Hex digits) of result
+    Secure Hash Algorithm (SHA), specifically the 256-Bit (32-byte) version,
+    twice resutling in 256-Bit (32-byte) double hash.
+    Checksum is the first 32-Bit (4-byte, 8-Hex digits) of result
 
     Args:
         s_hex: Hex number as a string
@@ -43,9 +43,9 @@ def hash160(s_hex: str) -> str:
     """Compute the 'Double Hash' or 'HASH160'.
 
     Input hex string is coverted to byte array then
-    1. Hashed with SHA256 resutling in 256-Bits (32-byte) hash
+    1. Hashed with SHA256 resutling in 256-Bit (32-byte) hash
     2. The result is hashed with RACE Integrity Primitives Evaluation Message Digest (RIPEMD)
-       specifically the 160-bit version, (RIPEMD160) resulting in 160-bits (20-Bytes)
+       specifically the 160-bit version, (RIPEMD160) resulting in 160-bit (20-Byte)
 
     Args:
         s_hex: Hex number as a string
@@ -74,4 +74,4 @@ def bitcoin_address(input_key_hex: str) -> str:
         Base58 encoded string
     """
     bitcoin_address_hex = hash160(s_hex=input_key_hex)
-    return base58.b58encode_check(s_hex=bitcoin_address_hex, version_prefix=AddressPrefix.PUBKEY_HASH_ADDRESS.value)
+    return base58.b58check_encode(s_hex=bitcoin_address_hex, version_prefix=AddressPrefix.PUBKEY_HASH_ADDRESS.value)

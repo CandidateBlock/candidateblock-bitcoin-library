@@ -2,11 +2,17 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
+
+"""Base58 encoding.
+
+Base58 and Base58Check encoding and decodings that are compatible
+with the bitcoin network.
+"""
+
 # https://en.bitcoin.it/wiki/List_of_address_prefixes
-from enum import Enum
 
 
-class AddressPrefix(Enum):
+class AddressPrefix(object):
     """String values of Hex byte
 
     Args:
