@@ -22,7 +22,7 @@ class AddressPrefix(object):
     PAY_TO_SCRIPT_HASH_ADDRESS = "05"                 # Base58 = 3
     PRIVATE_KEY_WIF = "80"                            # Base58 = 5, K or L
     BIP_32_EXTENDED_PUBLIC_KEY = "0488b21e"           # Base58 = xpub
-    BIP_32_EXTENDED_PRIVATE_KEY = "048ade4"           # Base58 = xprv
+    BIP_32_EXTENDED_PRIVATE_KEY = "0488ade4"          # Base58 = xprv
 
     TESTNET_PUBKEY_HASH_ADDRESS = "6f"                # Base58 = m or n
     TESTNET_PAY_TO_SCRIPT_HASH_ADDRESS = "c4"         # Base58 = 2

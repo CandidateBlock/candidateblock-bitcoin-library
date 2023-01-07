@@ -13,17 +13,15 @@ See https://candidateblock-bitcoin-library.readthedocs.io for complete documenta
 """
 import logging
 
-import candidateblock_bitcoin_library.base58 as base58
-import candidateblock_bitcoin_library.hash as hash
-
 from .address_prefix import AddressPrefix
+from .base58 import Base58
+from .hash import Hash
 from .keys import Keys
-from .wallet import Wallet
 from .version import __version__ as version
+from .wallet import Wallet
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
-__all__ = ["AddressPrefix", "base58", "hash", "Keys", "Wallet"]
-
+__all__ = ["AddressPrefix", "Base58", "Hash", "Keys", "Wallet"]
 __version__ = version

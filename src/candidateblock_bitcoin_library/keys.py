@@ -6,10 +6,9 @@ import os
 
 import ecdsa
 
-import candidateblock_bitcoin_library.base58 as base58
-import candidateblock_bitcoin_library.hash as hash
-
 from .address_prefix import AddressPrefix
+from .base58 import Base58
+from .hash import Hash
 
 
 class Keys(object):
@@ -130,7 +129,7 @@ class Keys(object):
         Returns:
             str: Base58 encoded
         """
-        return base58.b58encode(s_hex=self.get_private_key_hex())
+        return Base58.b58encode(s_hex=self.get_private_key_hex())
 
     def get_private_key_wif(self) -> str:
         """Get Private Key WIF in "Uncompressed" Format
@@ -150,7 +149,7 @@ class Keys(object):
         Returns:
             str: Base58 encoded
         """
-        return base58.b58check_encode(s_hex=self.get_private_key_hex(), version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
+        return Base58.b58check_encode(s_hex=self.get_private_key_hex(), version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
 
     def get_private_key_wif_compressed(self) -> str:
         """Get Private Key WIF in "Compressed" Format
@@ -171,7 +170,7 @@ class Keys(object):
         Returns:
             str: Base58 encoded
         """
-        return base58.b58check_encode(s_hex=self.get_private_key_hex() + "01", version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
+        return Base58.b58check_encode(s_hex=self.get_private_key_hex() + "01", version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
 
     def decode_private_key_wif_compressed(self, private_key_wif_b58check: str) -> bool:
         """_summary_
@@ -187,7 +186,7 @@ class Keys(object):
         # 64-Bytes for Payload (256-Bit [64-Byte[] key)
         # 2-Bytes for compressed (optional)
         # 8-Bytes for checksum
-        raw_hex = base58.b58decode(s_base58=private_key_wif_b58check)
+        raw_hex = Base58.b58decode(s_base58=private_key_wif_b58check)
         wif_hex = raw_hex
         if len(wif_hex) == 76:
             compressed_key = True
@@ -205,7 +204,7 @@ class Keys(object):
         wif_hex = wif_hex[2:]
         checksum = wif_hex
         # Verify checksum
-        double_sha256_hex, new_checksum = hash.double_sha256(s_hex=prefix + payload)
+        double_sha256_hex, new_checksum = Hash.double_sha256(s_hex=prefix + payload)
         self.private_key = int(pk, 16)
         self.public_key = None
         data = {"base58": private_key_wif_b58check,
@@ -347,7 +346,7 @@ class Keys(object):
             str: "Compressed" Public Key encoded in Base58
         """
         public_key_compressed_hex = self.get_public_key_compressed_hex()
-        return base58.b58check_encode(public_key_compressed_hex, version_prefix=AddressPrefix.PUBKEY_HASH_ADDRESS.value)
+        return Base58.b58check_encode(public_key_compressed_hex, version_prefix=AddressPrefix.PUBKEY_HASH_ADDRESS.value)
 
     def get_public_compressed_key_bitcoin_address(self) -> str:
         """Get Public Key "Compressed" (x, y) point as a Bitcoin Address

@@ -31,90 +31,90 @@ class TestBase58:
     # encode tests
     # **************************************************
     def test_encode_one(self):
-        assert cbl.base58.b58encode(s_hex=hex(123456789)[2:]) == "BukQL"
+        assert cbl.Base58.b58encode(s_hex=hex(123456789)[2:]) == "BukQL"
 
     def test_encode_two(self):
-        assert cbl.base58.b58encode(s_hex="000123456789abcdef") == "1C3CPq7c8PY"
+        assert cbl.Base58.b58encode(s_hex="000123456789abcdef") == "1C3CPq7c8PY"
 
     def test_encode_three(self):
         for test_data in test_data_set:
-            assert cbl.base58.b58encode(s_hex=test_data[0]) == test_data[1]
+            assert cbl.Base58.b58encode(s_hex=test_data[0]) == test_data[1]
 
     # **************************************************
     # decode tests
     # **************************************************
     def test_decode_one(self):
-        assert cbl.base58.b58decode(s_base58="BukQL") == "0" + hex(123456789)[2:]
+        assert cbl.Base58.b58decode(s_base58="BukQL") == "0" + hex(123456789)[2:]
 
     def test_decode_two(self):
-        assert cbl.base58.b58decode(s_base58="1C3CPq7c8PY") == "000123456789abcdef"
+        assert cbl.Base58.b58decode(s_base58="1C3CPq7c8PY") == "000123456789abcdef"
 
     def test_decode_three(self):
         for test_data in test_data_set:
-            assert cbl.base58.b58decode(s_base58=test_data[1]) == test_data[0]
+            assert cbl.Base58.b58decode(s_base58=test_data[1]) == test_data[0]
 
     def test_decode_four(self):
         # Invalid base58 and null char at end / start
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(s_base58="invalid") != "Not Valid Base58 Char"
+            assert cbl.Base58.b58decode(s_base58="invalid") != "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(s_base58="invalid\0") != "Not Valid Base58 Char"
+            assert cbl.Base58.b58decode(s_base58="invalid\0") != "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(s_base58="\0invalid") != "Not Valid Base58 Char"
+            assert cbl.Base58.b58decode(s_base58="\0invalid") != "Not Valid Base58 Char"
 
     def test_decode_five(self):
         # Valid & Invalid base58 and null char
-        assert cbl.base58.b58decode(s_base58="good") == "768320"
+        assert cbl.Base58.b58decode(s_base58="good") == "768320"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(s_base58="bad0IOl") == "Not Valid Base58 Char"
+            assert cbl.Base58.b58decode(s_base58="bad0IOl") == "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(
+            assert cbl.Base58.b58decode(
                 s_base58="goodbad0IOl") != "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(
+            assert cbl.Base58.b58decode(
                 s_base58="good\0bad0IOl") != "Not Valid Base58 Char"
 
     def test_decode_six(self):
         # check that decode skips whitespace, but still fails with unexpected non-whitespace at the end.
-        assert cbl.base58.b58decode(
+        assert cbl.Base58.b58decode(
             s_base58=" \t\n\v\f\r skip \r\f\v\n\t ") == "971a55"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.base58.b58decode(
+            assert cbl.Base58.b58decode(
                 s_base58=" \t\n\v\f\r skip \r\f\v\n\t a") == "971a55"
 
     # **************************************************
     # encode_check tests
     # **************************************************
     def test_encode_check_one(self):
-        assert cbl.base58.b58check_encode(s_hex="f54a5851e9372b87810a8e60cdd2e7cfd80b6e31",
-                                          version_prefix=cbl.AddressPrefix.PUBKEY_HASH_ADDRESS.value) == "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs"
+        assert cbl.Base58.b58check_encode(s_hex="f54a5851e9372b87810a8e60cdd2e7cfd80b6e31",
+                                          version_prefix=cbl.AddressPrefix.PUBKEY_HASH_ADDRESS) == "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs"
 
     def test_encode_check_two(self):
         # Private key in WIF base58 check output format
-        assert cbl.base58.b58check_encode(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd",
-                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn"
+        assert cbl.Base58.b58check_encode(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd",
+                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF) == "5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn"
 
     def test_encode_check_three(self):
         # Private key in WIF-compressed base58 check output format, extra 01 at end of input
-        assert cbl.base58.b58check_encode(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd01",
-                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ"
+        assert cbl.Base58.b58check_encode(s_hex="1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd01",
+                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF) == "KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ"
 
     def test_encode_check_four(self):
         # Mainnet Private key in WIF not compressed base58 check output format
-        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
-                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "5Kdc3UAwGmHHuj6fQD1LDmKR6J3SwYyFWyHgxKAZ2cKRzVCRETY"
+        assert cbl.Base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
+                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF) == "5Kdc3UAwGmHHuj6fQD1LDmKR6J3SwYyFWyHgxKAZ2cKRzVCRETY"
 
     def test_encode_check_five(self):
         # Mainnet Private key in WIF compressed base58 check output format, extra 01 at end of input
-        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
-                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF.value) == "L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6"
+        assert cbl.Base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
+                                          version_prefix=cbl.AddressPrefix.PRIVATE_KEY_WIF) == "L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6"
 
     def test_encode_check_six(self):
         # Testnet Private key in WIF not compressed base58 check output format
-        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
-                                          version_prefix=cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF.value) == "93QEdCzUrzMRsnbx2YuF6MsNjxQA6iWSrv9e2wX4NM4UmYzUsLn"
+        assert cbl.Base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2",
+                                          version_prefix=cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF) == "93QEdCzUrzMRsnbx2YuF6MsNjxQA6iWSrv9e2wX4NM4UmYzUsLn"
 
     def test_encode_check_seven(self):
         # Mainnet Private key in WIF compressed base58 check output format, extra 01 at end of input
-        assert cbl.base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
-                                          version_prefix=cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF.value) == "cVbZ8ovhye9AoAHFsqobCf7LxbXDAECy9Kb8TZdfsDYMZGBUyCnm"
+        assert cbl.Base58.b58check_encode(s_hex="ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db201",
+                                          version_prefix=cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF) == "cVbZ8ovhye9AoAHFsqobCf7LxbXDAECy9Kb8TZdfsDYMZGBUyCnm"
