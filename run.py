@@ -55,7 +55,7 @@ if __name__ == "__main__":
     xprv += master_chain_code_256
     xprv += b"\x00" + master_private_key_256
     xprv_hex = xprv.hex()
-    xprv_base58 = cbl.Base58.b58check_encode(
+    xprv_base58 = cbl.Base58.check_encode(
         s_hex=xprv_hex, version_prefix=cbl.AddressPrefix.BIP_32_EXTENDED_PRIVATE_KEY)
     print(f'xprv_base58: {xprv_base58}')
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         child_chain_code_256 + b"\x00" + new_child_priv_key_256
 
     xprv_hex = xprv.hex()
-    xprv_base58 = cbl.Base58.b58check_encode(
+    xprv_base58 = cbl.Base58.check_encode(
         s_hex=xprv_hex, version_prefix=cbl.AddressPrefix.BIP_32_EXTENDED_PRIVATE_KEY)
     print(f'xprv_base58: {xprv_base58}')
 
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     xpub = depth + parent_key_fingerprint + hardened_index_num + \
         child_chain_code_256 + child_public_key_256
     xpub_hex = xpub.hex()
-    xpub_base58 = cbl.Base58.b58check_encode(
+    xpub_base58 = cbl.Base58.check_encode(
         s_hex=xpub_hex, version_prefix=cbl.AddressPrefix.BIP_32_EXTENDED_PUBLIC_KEY)
     print(f'xpub_base58: {xpub_base58}')
 

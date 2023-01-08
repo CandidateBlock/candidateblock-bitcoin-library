@@ -15,7 +15,7 @@ import logging
 
 from .address_prefix import AddressPrefix
 from .base58 import Base58
-from .hash import Hash
+from .btc_hash import BtcHash
 from .keys import Keys
 from .version import __version__ as version
 from .wallet import Wallet
