@@ -3,13 +3,19 @@
 # directory in which our Python source codes reside.
 # import os
 # import sys
-# sys.path.insert(0, os.path.abspath('../../candidateblock_bitcoin_library/'))
+# sys.path.insert(0, os.path.abspath('../src/candidateblock_bitcoin_library/'))
 
+# *******************
+# * First time
+# *******************
 # $ sphinx-apidoc -f -o docs/source candidateblock_bitcoin_library
 # $ sphinx-build -b html docs/source/ docs/build/html
+# *******************
+# * Rebuild
+# *******************
 # $ cd docs
 # $ make clean
-# $ sphinx-apidoc -f -o ./source ../candidateblock_bitcoin_library
+# $ sphinx-apidoc -f -o ./source ../src/candidateblock_bitcoin_library
 # $ make html
 
 # Configuration file for the Sphinx documentation builder.

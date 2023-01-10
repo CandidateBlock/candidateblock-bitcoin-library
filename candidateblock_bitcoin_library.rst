@@ -20,18 +20,10 @@ candidateblock\_bitcoin\_library.base58 module
    :undoc-members:
    :show-inheritance:
 
-candidateblock\_bitcoin\_library.bip39\_word\_list module
----------------------------------------------------------
+candidateblock\_bitcoin\_library.hash module
+--------------------------------------------
 
-.. automodule:: candidateblock_bitcoin_library.bip39_word_list
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.btc\_hash module
--------------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.btc_hash
+.. automodule:: candidateblock_bitcoin_library.hash
    :members:
    :undoc-members:
    :show-inheritance:
@@ -44,26 +36,10 @@ candidateblock\_bitcoin\_library.keys module
    :undoc-members:
    :show-inheritance:
 
-candidateblock\_bitcoin\_library.mnemonic module
-------------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.mnemonic
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 candidateblock\_bitcoin\_library.version module
 -----------------------------------------------
 
 .. automodule:: candidateblock_bitcoin_library.version
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.wallet module
-----------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.wallet
    :members:
    :undoc-members:
    :show-inheritance:
