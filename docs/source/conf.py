@@ -15,7 +15,7 @@
 # *******************
 # $ cd docs
 # $ make clean
-# $ sphinx-apidoc -f -o ./source ../src/candidateblock_bitcoin_library
+# $ sphinx-apidoc --force --separate  -o ./source ../src/candidateblock_bitcoin_library
 # $ make html
 
 # Configuration file for the Sphinx documentation builder.
@@ -26,10 +26,13 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+from candidateblock_bitcoin_library import __version__
+
 project = 'CandidateBlock Bitcoin Library'
-copyright = '2022, CandidateBlock@CandidateBlock.com'
+copyright = '2023, CandidateBlock@CandidateBlock.com'
 author = 'CandidateBlock@CandidateBlock.com'
-release = '0.0.0.Dev'
+version = __version__
+release = version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

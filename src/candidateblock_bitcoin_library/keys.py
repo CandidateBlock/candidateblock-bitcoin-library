@@ -158,12 +158,12 @@ class Keys(object):
         Verify length, Base58 Check checksum and Version Byte Prefix for Mainnet or Testnet
 
         Args:
-            str: Base58 encoded WIF Private Key
+            wif_base58: Base58 encoded WIF Private Key
 
         Returns:
-            tuple: priv_key (bytes): private key 32-bytes, 256-bits
-                   is_compressed (bool): Should this private key be used to generate compressed public keys
-                   is_mainnet (bool): Network for the private key to be used on (Mainnet or Testnet)
+            A tuple containing, respectively, a bytes (private key 32-bytes, 256-bits) and 
+            a bool (Should this private key be used to generate compressed public keys) and
+            a bool (Network for the private key to be used on [Mainnet or Testnet]).
         """
         wif = Base58.decode(base58=wif_base58)
 

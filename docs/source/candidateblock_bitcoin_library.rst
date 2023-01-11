@@ -4,69 +4,17 @@ candidateblock\_bitcoin\_library package
 Submodules
 ----------
 
-candidateblock\_bitcoin\_library.address\_prefix module
--------------------------------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: candidateblock_bitcoin_library.address_prefix
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.base58 module
-----------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.base58
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.bip39\_word\_list module
----------------------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.bip39_word_list
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.btc\_hash module
--------------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.btc_hash
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.keys module
---------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.keys
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.mnemonic module
-------------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.mnemonic
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.version module
------------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.version
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-candidateblock\_bitcoin\_library.wallet module
-----------------------------------------------
-
-.. automodule:: candidateblock_bitcoin_library.wallet
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   candidateblock_bitcoin_library.address_prefix
+   candidateblock_bitcoin_library.base58
+   candidateblock_bitcoin_library.bip39_word_list
+   candidateblock_bitcoin_library.btc_hash
+   candidateblock_bitcoin_library.keys
+   candidateblock_bitcoin_library.mnemonic
+   candidateblock_bitcoin_library.version
+   candidateblock_bitcoin_library.wallet
 
 Module contents
 ---------------
