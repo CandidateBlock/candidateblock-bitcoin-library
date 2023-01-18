@@ -14,7 +14,7 @@ import hashlib
 import hmac
 import os
 
-from .address_prefix import AddressPrefix
+from .prefix import Prefix
 from .base58 import Base58
 from .bip39_word_list import bip39_english
 from .keys import Keys
@@ -230,7 +230,7 @@ class Wallet(object):
         xprv += b"\x00" + master_private_key
         xprv_hex = xprv.hex()
         xprv_base58 = Base58.check_encode(
-            s_hex=xprv_hex, version_prefix=AddressPrefix.BIP_32_EXTENDED_PRIVATE_KEY)
+            s_hex=xprv_hex, version_prefix=Prefix.BIP_32_EXTENDED_PRIVATE_KEY)
         print(f'xprv_base58: {xprv_base58}')
 
     @ staticmethod
@@ -315,5 +315,5 @@ class Wallet(object):
         xprv += child_chaincode
         xprv += b"\x00" + child_private_key
         xprv_base58 = Base58.check_encode(
-            s_hex=xprv.hex(), version_prefix=AddressPrefix.BIP_32_EXTENDED_PRIVATE_KEY)
+            s_hex=xprv.hex(), version_prefix=Prefix.BIP_32_EXTENDED_PRIVATE_KEY)
         print(f'xprv_base58: {xprv_base58}')

@@ -27,33 +27,30 @@ b58_test_vectors = (
         "1cWB5HCBdLjAuqGGReWE3R3CguuwSjw6RHn39s2yuDRTS5NsBgNiFpWgAnEx6VQi8csexkgYw3mdYrMHr8x9i7aEwP8kZ7vccXWqKDvGv3u1GxFKPuAkn8JCPPGDMf3vMMnbzm6Nh9zh1gcNsMvH3ZNLmP5fSG6DGbbi2tuwMWPthr4boWwCxf7ewSgNQeacyozhKDDQQ1qL5fQFUW52QKUZDZ5fw3KXNQJMcNTcaB723LchjeKun7MuGW5qyCBZYzA1KjofN1gYBV3NqyhQJ3Ns746GNuf9N2pQPmHz4xpnSrrfCvy6TVVz5d4PdrjeshsWQwpZsZGzvbdAdN8MKV5QsBDY"]
 )
 
-PUBKEY_HASH = b'\x00'
 COMPRESSED = b'\x01'
-MAINNET = b'\x80'
-TESTNET = b'\xEF'
 
 # Base58 CHECK Test Vectors
 b58check_test_vectors = (
     # Bitcoin Address
-    [PUBKEY_HASH + bytes.fromhex("f54a5851e9372b87810a8e60cdd2e7cfd80b6e31"),
+    [cbl.Prefix.PAY_TO_PUBKEY_HASH + bytes.fromhex("f54a5851e9372b87810a8e60cdd2e7cfd80b6e31"),
      "1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs"],
     # Private key in WIF base58 check output format (Mainnet '\x80'), not compressed
-    [MAINNET + bytes.fromhex("1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd"),
+    [cbl.Prefix.PRIVATE_KEY_WIF + bytes.fromhex("1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd"),
      "5J3mBbAH58CpQ3Y5RNJpUKPE62SQ5tfcvU2JpbnkeyhfsYB1Jcn"],
     # Private key in WIF-compressed base58 check output format (Mainnet '\x80'), extra '\x01' at end of input
-    [MAINNET + bytes.fromhex("1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd") + COMPRESSED,
+    [cbl.Prefix.PRIVATE_KEY_WIF + bytes.fromhex("1e99423a4ed27608a15a2616a2b0e9e52ced330ac530edcc32c8ffc6a526aedd") + COMPRESSED,
      "KxFC1jmwwCoACiCAWZ3eXa96mBM6tb3TYzGmf6YwgdGWZgawvrtJ"],
     # Mainnet Private key in WIF not compressed base58 check output format (Mainnet '\x80')
-    [MAINNET + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2"),
+    [cbl.Prefix.PRIVATE_KEY_WIF + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2"),
      "5Kdc3UAwGmHHuj6fQD1LDmKR6J3SwYyFWyHgxKAZ2cKRzVCRETY"],
     # Mainnet Private key in WIF compressed base58 check output format (Mainnet '\x80'), extra 01 at end of input
-    [MAINNET + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2") + COMPRESSED,
+    [cbl.Prefix.PRIVATE_KEY_WIF + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2") + COMPRESSED,
      "L5EZftvrYaSudiozVRzTqLcHLNDoVn7H5HSfM9BAN6tMJX8oTWz6"],
     # Testnet Private key in WIF not compressed base58 check output format (Testnet '\xef')
-    [TESTNET + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2"),
+    [cbl.Prefix.TESTNET_PRIVATE_KEY_WIF + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2"),
      "93QEdCzUrzMRsnbx2YuF6MsNjxQA6iWSrv9e2wX4NM4UmYzUsLn"],
     # Testnet Private key in WIF compressed base58 check output format (Testnet '\xef'), extra 01 at end of input
-    [TESTNET + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2") + COMPRESSED,
+    [cbl.Prefix.TESTNET_PRIVATE_KEY_WIF + bytes.fromhex("ef235aacf90d9f4aadd8c92e4b2562e1d9eb97f0df9ba3b508258739cb013db2") + COMPRESSED,
      "cVbZ8ovhye9AoAHFsqobCf7LxbXDAECy9Kb8TZdfsDYMZGBUyCnm"],
 )
 
@@ -81,43 +78,43 @@ class TestBase58:
     # decode tests
     # **************************************************
     def test_decode_one(self):
-        assert cbl.Base58.decode(base58="BukQL").hex() == "0" + hex(123456789)[2:]
+        assert cbl.Base58.decode(b58="BukQL").hex() == "0" + hex(123456789)[2:]
 
     def test_decode_two(self):
-        assert cbl.Base58.decode(base58="1C3CPq7c8PY").hex() == "000123456789abcdef"
+        assert cbl.Base58.decode(b58="1C3CPq7c8PY").hex() == "000123456789abcdef"
 
     def test_decode_three(self):
         for test_data in b58_test_vectors:
-            assert cbl.Base58.decode(base58=test_data[1]) == test_data[0]
+            assert cbl.Base58.decode(b58=test_data[1]) == test_data[0]
 
     def test_decode_four(self):
         # Invalid base58 and null char at end / start
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.Base58.decode(base58="invalid") != "Not Valid Base58 Char"
+            assert cbl.Base58.decode(b58="invalid") != "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.Base58.decode(base58="invalid\0") != "Not Valid Base58 Char"
+            assert cbl.Base58.decode(b58="invalid\0") != "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.Base58.decode(base58="\0invalid") != "Not Valid Base58 Char"
+            assert cbl.Base58.decode(b58="\0invalid") != "Not Valid Base58 Char"
 
     def test_decode_five(self):
         # Valid & Invalid base58 and null char
-        assert cbl.Base58.decode(base58="good").hex() == "768320"
+        assert cbl.Base58.decode(b58="good").hex() == "768320"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.Base58.decode(base58="bad0IOl") == "Not Valid Base58 Char"
-        with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
-            assert cbl.Base58.decode(
-                base58="goodbad0IOl") != "Not Valid Base58 Char"
+            assert cbl.Base58.decode(b58="bad0IOl") == "Not Valid Base58 Char"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
             assert cbl.Base58.decode(
-                base58="good\0bad0IOl") != "Not Valid Base58 Char"
+                b58="goodbad0IOl") != "Not Valid Base58 Char"
+        with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
+            assert cbl.Base58.decode(
+                b58="good\0bad0IOl") != "Not Valid Base58 Char"
 
     def test_decode_six(self):
         # check that decode skips whitespace, but still fails with unexpected non-whitespace at the end.
         assert cbl.Base58.decode(
-            base58=" \t\n\v\f\r skip \r\f\v\n\t ").hex() == "971a55"
+            b58=" \t\n\v\f\r skip \r\f\v\n\t ").hex() == "971a55"
         with pytest.raises(ValueError, match="string argument should contain only Base58 characters"):
             assert cbl.Base58.decode(
-                base58=" \t\n\v\f\r skip \r\f\v\n\t a").hex() == "971a55"
+                b58=" \t\n\v\f\r skip \r\f\v\n\t a").hex() == "971a55"
 
     # **************************************************
     # encode_check tests
@@ -125,8 +122,38 @@ class TestBase58:
     def test_enccode_check_one(self):
         # Empty input
         with pytest.raises(ValueError, match=r"Input payload \(bytes\) can not be empty"):
-            assert cbl.Base58.check_encode(payload=b'') == "This should raise ValueError"
+            assert cbl.Base58.check_encode(
+                payload=b'') == "This should raise ValueError"
 
     def test_enccode_check_two(self):
         for test_data in b58check_test_vectors:
             assert cbl.Base58.check_encode(payload=test_data[0]) == test_data[1]
+
+    # **************************************************
+    # decode_check tests
+    # **************************************************
+    def test_deccode_check_one(self):
+        # Check sum not valid
+        ret_tuple = cbl.Base58.check_decode(b58="1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAs")
+        (prefix, payload, checcksum) = ret_tuple
+        assert checcksum == bytes.fromhex('c7f18fe8')  # 0xC7F18FE8 correct value
+
+    def test_deccode_check_two(self):
+        with pytest.raises(ValueError, match="Checksum not valid"):
+            # Checksum not valid
+            ret_tuple = cbl.Base58.check_decode(
+                b58="1PMycacnJaSqwwJqjawXBErnLsZ7RkXUAt")
+            (prefix, payload, checcksum) = ret_tuple
+            assert ret_tuple == "This should raise ValueError"
+
+    def test_deccode_check_three(self):
+        for test_data in b58check_test_vectors:
+            ret_tuple = cbl.Base58.check_decode(b58=test_data[1])
+            (prefix, payload, checcksum) = ret_tuple
+            assert prefix + payload == test_data[0]
+
+    def test_enccode_check_four(self):
+        # Empty input
+        with pytest.raises(ValueError, match="base58 string argument is empty"):
+            ret_tuple = cbl.Base58.check_decode(b58="")
+            assert ret_tuple == "This should raise ValueError"

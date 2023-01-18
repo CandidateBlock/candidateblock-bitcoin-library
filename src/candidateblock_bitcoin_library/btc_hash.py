@@ -33,7 +33,7 @@ class BtcHash(object):
         return second_sha256, second_sha256[:4]
 
     @staticmethod
-    def hash160(s_hex: str) -> str:
+    def hash160(value: bytes) -> bytes:
         """Compute the 'Double Hash' or 'HASH160'.
 
         Input hex string is coverted to byte array then
@@ -42,16 +42,13 @@ class BtcHash(object):
         specifically the 160-bit version, (RIPEMD160) resulting in 160-bit (20-Byte)
 
         Args:
-            s_hex: Hex number as a string
+            value (bytes): bytes to be hash160
 
         Returns:
-            bitcoin_address_hex as string
+            bytes: hash160 20-bytes
         """
-        if len(s_hex) % 2 != 0:
-            s_hex = '0' + s_hex
-        # 256-byte hash = 32-Bytes = 64 Hex Chars
-        key_sha256 = hashlib.new("sha256", bytes.fromhex(s_hex)).digest()
+        # 256-byte (32-Byte) hash
+        value_sha256 = hashlib.new("sha256", value).digest()
         # 160-byte hash (smaller for less data in Bitcoin address) = 20-Bytes = 40 Hex Chars
-        key_ripemd160 = hashlib.new("ripemd160", key_sha256).digest()
-        bitcoin_address_hex = key_ripemd160.hex()
-        return bitcoin_address_hex
+        value_ripemd160 = hashlib.new("ripemd160", value_sha256).digest()
+        return value_ripemd160

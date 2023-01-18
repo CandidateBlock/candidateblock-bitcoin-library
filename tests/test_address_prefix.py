@@ -9,14 +9,16 @@ class TestVersionPrefix:
     # Check enum values
     # **************************************************
     def test_version_prefix_one(self):
-        assert cbl.AddressPrefix.PUBKEY_HASH_ADDRESS == "00"
-        assert cbl.AddressPrefix.PAY_TO_SCRIPT_HASH_ADDRESS == "05"
-        assert cbl.AddressPrefix.PRIVATE_KEY_WIF == "80"
-        assert cbl.AddressPrefix.BIP_32_EXTENDED_PUBLIC_KEY == "0488b21e"
-        assert cbl.AddressPrefix.BIP_32_EXTENDED_PRIVATE_KEY == "0488ade4"
+        assert cbl.Prefix.PAY_TO_PUBKEY_HASH == b'\x00'
+        assert cbl.Prefix.PAY_TO_SCRIPT_HASH == b'\x05'
+        assert cbl.Prefix.PRIVATE_KEY_WIF == b'\x80'
+        assert cbl.Prefix.BIP_32_EXTENDED_PUBLIC_KEY == bytes.fromhex("0488b21e")
+        assert cbl.Prefix.BIP_32_EXTENDED_PRIVATE_KEY == bytes.fromhex("0488ade4")
 
-        assert cbl.AddressPrefix.TESTNET_PUBKEY_HASH_ADDRESS == "6f"                # Base58 = m or n
-        assert cbl.AddressPrefix.TESTNET_PAY_TO_SCRIPT_HASH_ADDRESS == "c4"
-        assert cbl.AddressPrefix.TESTNET_PRIVATE_KEY_WIF == "ef"
-        assert cbl.AddressPrefix.TESTNET_BIP_32_EXTENDED_PUBLIC_KEY == "043587cf"
-        assert cbl.AddressPrefix.TESTNET_BIP_32_EXTENDED_PRIVATE_KEY == "04358394"
+        assert cbl.Prefix.TESTNET_PAY_TO_PUBKEY_HASH == b'\x6f'                # Base58 = m or n
+        assert cbl.Prefix.TESTNET_PAY_TO_SCRIPT_HASH == b'\xc4'
+        assert cbl.Prefix.TESTNET_PRIVATE_KEY_WIF == b'\xef'
+        assert cbl.Prefix.TESTNET_BIP_32_EXTENDED_PUBLIC_KEY == bytes.fromhex(
+            "043587cf")
+        assert cbl.Prefix.TESTNET_BIP_32_EXTENDED_PRIVATE_KEY == bytes.fromhex(
+            "04358394")

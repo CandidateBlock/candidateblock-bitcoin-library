@@ -4,14 +4,10 @@
 
 import os
 
-# import ecdsa
+import ecdsa
 
-# from .address_prefix import AddressPrefix
-# from .base58 import Base58
-# from .hash import Hash
-
-from .btc_hash import BtcHash
 from .base58 import Base58
+from .btc_hash import BtcHash
 
 
 class Keys(object):
@@ -23,44 +19,17 @@ class Keys(object):
     limitation due to discrete Elliptic Curve).
     A Public key is generated from a one way cryptographic function
     called secp256k1 which uses an Elliptic Curve.
-
-    Attributes:
-        private_key: An integer storing Private key as 256-Bit (32-byte) number
-        public_key: A point (x, y) on the Elliptic Curve
-
     """
 
     # The secp256k1 curve is over a finite field of prime order p
     _p = 2**256 - 2**32 - 2**9 - 2**8 - 2**7 - 2**6 - 2**4 - 1
     # Number of points on secp256k1 curve
     _n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-
-    # def __init__(self) -> None:
-    #     """Inits Keys with known state.
-    #     """
-    #     self.private_key = None
-    #     self.public_key = None
-
-    # @staticmethod
-    # def _hex256(input_hex: str) -> str:
-    #     """Pad 256-Bit Hex sting to always be even number of chars
-
-    #     256-Bit (32-byte) hex number should have 64 chars (256 / 4).
-    #     4-Bit = 0-f in Hex.
-
-    #     Args:
-    #         input_hex (str): Hex number
-
-    #     Returns:
-    #         str: Base58 encoded
-    #     """
-    #     # 256 bit hex number should have 64 chars (256 / 4). 4 bits = 0-f in hex
-    #     digits_missing = 64 - len(input_hex)
-    #     output_hex = input_hex
-    #     if digits_missing > 0:
-    #         # Pad front of sting with "0"
-    #         output_hex = "0" * digits_missing + output_hex
-    #     return output_hex
+    _a = 0x0000000000000000000000000000000000000000000000000000000000000000
+    _b = 0x0000000000000000000000000000000000000000000000000000000000000007
+    _r = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+    _Gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+    _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 
     # ************************************************************************************************************************
     # Private Key ************************************************************************************************************
@@ -135,7 +104,7 @@ class Keys(object):
         if is_mainnet:
             prefix = b'\x80'
         else:
-            prefix = b'\xef'
+            prefix = b'\xEF'
 
         if is_compressed:
             compressed = b'\x01'
@@ -151,172 +120,132 @@ class Keys(object):
         return Base58.check_encode(payload=raw_bytes)
 
     @classmethod
-    def priv_key_wif_decode(self, wif_base58: str = '') -> tuple:
+    def priv_key_wif_decode(self, wif_b58: str = '') -> tuple:
         """Private Key 'Wallet Import Format' (Base58 Check) decoded to private key, compressed, network
 
         Decode Private key WIF back to constituent parts.
         Verify length, Base58 Check checksum and Version Byte Prefix for Mainnet or Testnet
 
         Args:
-            wif_base58: Base58 encoded WIF Private Key
+            wif_b58 (str): Base58 encoded WIF Private Key
 
         Returns:
-            A tuple containing, respectively, a bytes (private key 32-bytes, 256-bits) and 
+            A tuple containing, respectively, a bytes (private key 32-bytes, 256-bits) and
             a bool (Should this private key be used to generate compressed public keys) and
             a bool (Network for the private key to be used on [Mainnet or Testnet]).
         """
-        wif = Base58.decode(base58=wif_base58)
-
-        # Check if valid length. (32-bytes => WIF, 33-Bytes => WIF Compressed)
-        if len(wif) == 32:
-            is_compressed = False
-            priv_key = wif
-        elif len(wif) == 33:
-            is_compressed = True
-            priv_key = wif[:-1]  # Remove '\x01' compression byte from end
-        else:
-            raise Exception(
-                f"WIF length incorrect {len(wif)}, valid is 32 or 33 bytes.")
+        wif = Base58.decode(b58=wif_b58)
 
         # Check valid checksum
-        wif_value = wif[:-4]
-        wif_checksum = wif[:-4]
-        double_hash, check_sum = BtcHash.double_sha256(value=wif_value)
-        if wif_checksum != check_sum:
+        payload = wif[:-4]
+        checksum = wif[-4:]
+        double_hash, new_check_sum = BtcHash.double_sha256(value=payload)
+        if new_check_sum != checksum:
             raise Exception("WIF checksum not correct")
 
-        if wif_base58[0] == b'\x80':
+        version = payload[0]
+        payload = payload[1:]
+        if version == 0x80:
             is_mainnet = True
-        elif wif_base58[0] == b'\xef':
+        elif version == 0xEF:
             is_mainnet = False
         else:
             raise Exception(
-                f"WIF version byte={wif_base58[0].hex()} is not valid. 0x80 or 0xEF Valid")
+                f"WIF version byte={payload[0].hex()} is not valid. 0x80 or 0xEF Valid")
+
+        # Check if valid length. (32-bytes => WIF, 33-Bytes => WIF Compressed)
+        if len(payload) == 32:
+            is_compressed = False
+            priv_key = payload
+        elif len(payload) == 33:
+            is_compressed = True
+            priv_key = payload[:-1]  # Remove '\x01' compression byte from end
+        else:
+            raise Exception(
+                f"WIF length incorrect {len(payload)}, valid is 32 or 33 bytes.")
 
         return (priv_key, is_compressed, is_mainnet)
 
-    # def get_private_key(self) -> int:
-    #     """Get Private Key
+    # ************************************************************************************************************************
+    # Public Key *************************************************************************************************************
+    # ************************************************************************************************************************
+    @classmethod
+    def generate_pub_key(self, priv_key: bytes = b'', is_compressed: bool = True) -> bytes:
+        """Calculate Public key from the Private Key
 
-    #     Access method to private_key
+        The public key is calculated from the private key using
+        elliptic curve multiplication, which is irreversible:
+        K = k * G, where k is the private key, G is a constant
+        point called the generator point, and K is the resulting
+        public key.
 
-    #     Returns:
-    #         int: Raw 256-Bit (32-Byte) Private Key
-    #     """
-    #     return self.private_key
+        The secp256k1 curve is defined by the following function,
+        y^2 = (X^3 + 7) over Fp or
+        Y^2 mod p = (x^3 +7) mod p
+        The mod p (modulo prime number p) indicates that this curve is
+        over a finite field of prime order p,
+        where p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1,
+        a very large prime number.
 
-    # def get_private_key_hex(self) -> str:
-    #     """Get Private Key Hex
+        "Uncompressed" Public Key Format
+        "\\x04" prefix (1-Byte) -> "Uncompressed"
+        + X Coordinate as 256-Bit (32-Byte)
+        + Y Coordinate as 256-Bit (32-Byte)
+        result string = 520-Bit (65-Byte)
 
-    #     Convert Private Key from 256-Bit (32-Byte) integer to 64-Char Hex string
-    #     with "0" padding. (Each Hex character holds 4-Bits, 256 / 4 = 64 Chars)
+        "Compressed" Public Key Format
+        "Compressed" means store x coordinate value and y coordinate sign
+        "\\x02" prefix (1-Byte) if y is even
+        "\\x03" prefix (1-Byte) if y is odd
+        Even or Odd Hex prefix -> "Compressed"
+        + X Coordinate as 256-Bit (32-Byte)
+        result string = 264-Bit (33)
+        This results in nearly a 50% size reduction compared to the
+        "Uncompressed" Private Key size of 520-Bit (65-Bytes)
+        264 / 520 = 50.8%
 
-    #     Returns:
-    #         str: 64-Char (32-Byte) Hex Private Key
-    #     """
-    #     hex_str = hex(self.private_key)[2:]  # remove 0x from Hex string
-    #     # Return hex string 64 chars long => 256 bits, "0" padding
-    #     return self._hex256(hex_str)
 
-    # def get_private_key_base58(self) -> str:
-    #     """Get Private Key Base58
+        Args:
+            priv_key (bytes): private key 32-bytes, 256-bits
+            is_compressed (bool): private key format
 
-    #     Convert Private Key from 256-Bit integer to Base58
-    #     encoded string
+        Returns:
+            bytes: Public key 32-bytes, 256-bits
+        """
+        curve_secp256k1 = ecdsa.ellipticcurve.CurveFp(self._p, self._a, self._b)
+        generator_secp256k1 = ecdsa.ellipticcurve.Point(
+            curve_secp256k1, self._Gx, self._Gy, self._r)
+        priv_key_int = int.from_bytes(bytes=priv_key, byteorder='big', signed=False)
+        # Calculate the public key point (x, y)
+        pub_key_point = priv_key_int * generator_secp256k1
+        x_pt = int(pub_key_point.x()).to_bytes(length=32, byteorder='big', signed=False)
+        y_pt = int(pub_key_point.y()).to_bytes(length=32, byteorder='big', signed=False)
+        if not is_compressed:
+            # "Uncompressed" Public Key Format
+            # "\x04" prefix (1-Byte) -> "Uncompressed"
+            # + X Coordinate as 256-Bit (32-Byte)
+            # + Y Coordinate as 256-Bit (32-Byte)
+            # result string = 520-Bit (65-Byte)
+            pub_key = b'\04' + x_pt + y_pt
+        else:
+            # "Compressed" Public Key Format
+            # "Compressed" means store x coordinate value and y coordinate sign
+            # "\x02" prefix (1-Byte) if y is even
+            # "\x03" prefix (1-Byte) if y is odd
+            # Even or Odd Hex prefix -> "Compressed"
+            # + X Coordinate as 256-Bit (32-Byte)
+            # result string = 264-Bit (33)
+            # This results in nearly a 50% size reduction compared to the
+            # "Uncompressed" Private Key size of 520-Bit (65-Bytes)
+            # 264 / 520 = 50.8%
+            if int.from_bytes(bytes=y_pt, byteorder='big', signed=False) % 2:
+                # "\x03" prefix byte if y is odd
+                pub_key = b'\x03' + x_pt
+            else:
+                # "\x02" prefix byte if y is even
+                pub_key = b'\x02' + x_pt
+        return pub_key
 
-    #     Returns:
-    #         str: Base58 encoded
-    #     """
-    #     return Base58.encode(s_hex=self.get_private_key_hex())
-
-    # def get_private_key_wif(self) -> str:
-    #     """Get Private Key WIF in "Uncompressed" Format
-
-    #     Convert Private Key from 256-Bit (32-Byte) integer to Base58 encoded
-    #     string in Wallet Import Format (WIF).
-    #     "Uncompressed" => PUBLIC keys generated from private key
-    #     should be "Uncompressed".
-
-    #     Uncompressed WIF
-
-    #     Payload = Version Prefix (Number of Bytes varies)
-    #     Payload = Payload + Private Key 256-bit (64-Byte) Hex Private Key)
-    #     Hex = Hex + Checksum (first 4-Bytes of double_sha256 Payload)
-    #     Base58 Encode Check (Hex) - leading char is "5"
-
-    #     Returns:
-    #         str: Base58 encoded
-    #     """
-    #     return Base58.check_encode(s_hex=self.get_private_key_hex(), version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
-
-    # def get_private_key_wif_compressed(self) -> str:
-    #     """Get Private Key WIF in "Compressed" Format
-
-    #     Convert Private Key from 256-Bit (32-Byte) integer to Base58 encoded
-    #     string in "Compressed" Wallet Import Format (WIF).
-    #     "Compressed" => PUBLIC keys generated from private key should
-    #     be in "Compressed" format.
-
-    #     Compressed WIF
-
-    #     Payload = Version Prefix (Number of Bytes varies)
-    #     Payload = Payload + Private Key (64-Byte Hex Private Key)
-    #     Payload = Payload + "01" (1-Byte Hex suffix added to Private Key for compressed flag)
-    #     Hex = Hex + Checksum (4-Bytes of double_sha256 of Payload)
-    #     Base58 Encode Check (Hex) - leading char is "K" or "L"
-
-    #     Returns:
-    #         str: Base58 encoded
-    #     """
-    #     return Base58.check_encode(s_hex=self.get_private_key_hex() + "01", version_prefix=AddressPrefix.PRIVATE_KEY_WIF.value)
-
-    # def decode_private_key_wif_compressed(self, private_key_wif_b58check: str) -> bool:
-    #     """_summary_
-
-    #     Args:
-    #         private_key_wif_b58check (str): _description_
-
-    #     Returns:
-    #         bool: _description_
-    #     """
-    #     # Char len 76 => Compressed, 74 => Not Compressed
-    #     # 2-Bytes for prefix
-    #     # 64-Bytes for Payload (256-Bit [64-Byte[] key)
-    #     # 2-Bytes for compressed (optional)
-    #     # 8-Bytes for checksum
-    #     raw_hex = Base58.decode(s_base58=private_key_wif_b58check)
-    #     wif_hex = raw_hex
-    #     if len(wif_hex) == 76:
-    #         compressed_key = True
-    #     else:
-    #         compressed_key = False
-    #     prefix = wif_hex[:2]
-    #     payload = wif_hex[2:-8]
-    #     wif_hex = wif_hex[2:]
-    #     pk = wif_hex[:64]
-    #     wif_hex = wif_hex[64:]
-    #     if compressed_key:
-    #         compressed = wif_hex[:2]  # Compressed
-    #     else:
-    #         compressed = "00"   # Not compressed
-    #     wif_hex = wif_hex[2:]
-    #     checksum = wif_hex
-    #     # Verify checksum
-    #     double_sha256_hex, new_checksum = Hash.double_sha256(s_hex=prefix + payload)
-    #     self.private_key = int(pk, 16)
-    #     self.public_key = None
-    #     data = {"base58": private_key_wif_b58check,
-    #             "hex": raw_hex,
-    #             "checksum": checksum,
-    #             "checksum_match": new_checksum == checksum,
-    #             "prefix": prefix,
-    #             "payload": payload,
-    #             "compressed": compressed}
-    #     return data
-
-    # # ************************************************************************************************************************
-    # # Public Key *************************************************************************************************************
-    # # ************************************************************************************************************************
     # def generate_public_key(self) -> None:
     #     """Generate Public Key
 

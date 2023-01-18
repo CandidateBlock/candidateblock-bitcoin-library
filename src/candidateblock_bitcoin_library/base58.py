@@ -55,7 +55,7 @@ class Base58(object):
         return base58
 
     @classmethod
-    def decode(self, base58: str) -> bytes:
+    def decode(self, b58: str = "") -> bytes:
         """Decode the Base58 encoded string
 
         Check base58 string is valid, remove padding.
@@ -64,7 +64,7 @@ class Base58(object):
         with any leading '00'
 
         Args:
-            base58 (str): Base58 encoded string
+            b58 (str): Base58 encoded string
 
         Raises:
             ValueError: Input string can not be empty
@@ -73,26 +73,26 @@ class Base58(object):
         Returns:
             bytes: value in bytes
         """
-        if base58 is None or base58 == "":
+        if b58 is None or b58 == "":
             raise ValueError('base58 string argument is empty')
 
         # Skip leading spaces & other spacing chars
-        base58 = base58.strip(" \t\n\v\f\r")
+        b58 = b58.strip(" \t\n\v\f\r")
 
         # Check if string only contains allowed characters
-        no_leading_zeros = base58.strip("0")
+        no_leading_zeros = b58.strip("0")
         if re.findall(f"[^{self._b58alphabet}]", no_leading_zeros):
             raise ValueError(
                 'base58 string argument should contain only Base58 characters')
 
         # Skip and count leading '1's.
         # the bitcoin base58 encoding includes a manual step to convert all leading 0x00’s to 1’s
-        zeroes = len(base58) - len(base58.lstrip("1"))
+        zeroes = len(b58) - len(b58.lstrip("1"))
 
         # Reverse the input string
-        base58 = base58[::-1]
+        b58 = b58[::-1]
         value = 0
-        for i, x in enumerate(base58):
+        for i, x in enumerate(b58):
             value += self._b58alphabet.index(x) * (58 ** i)
 
         num_bytes = 0
@@ -130,60 +130,40 @@ class Base58(object):
         raw_bytes = payload + check_sum
         return Base58.encode(input=raw_bytes)
 
-    # @staticmethod
-    # def check_encode(s_hex: str, version_prefix: str) -> str:
-    #     """Encode a hex string using Base58Check
+    @classmethod
+    def check_decode(self, b58: str = "") -> tuple:
+        """_summary_
 
-    #     Base58Check
-    #     1. Takes input hex string
-    #     2. Appends a version prefix
-    #     3. Computes the double-SHA256 checksum (4-Bytes) and appends to end
-    #     4. Base58 encodes result
+        Args:
+            b58 (str): Base58Check encoded string
 
-    #     Args:
-    #         s_hex (str): Hex number as a string
-    #         version_prefix (str): Identifier for type of data encoded as a string
+        Raises:
+            ValueError: Checksum not valid
 
-    #     Returns:
-    #         str: Base58Check encoded string
-    #     """
-    #     data = version_prefix + s_hex
-    #     double_sha256_hex, checksum = Hash.double_sha256(s_hex=data)
-    #     full_hex = data + checksum
-    #     return Base58.encode(s_hex=full_hex)
+        Returns:
+            A tuple containing, respectively, a bytes (address prefix) and
+            a bytes (payload) and
+            a bytes (checksum)
+        """
+        # bytes len 38 => Compressed, 37 => Not Compressed
+        # 1-Bytes for prefix
+        # 32-Bytes for Payload (256-Bit [64-Bkey)
+        # 1-Bytes for compressed (optional)
+        # 4-Bytes for checksum
+        raw_hex = Base58.decode(b58=b58)
+        # prefix is usually 1-Byte except xpub, xprv, tpub, tprv, bc1, tb1
+        first_byte = raw_hex[0]
+        if first_byte == b'\04':
+            prefix_byte_len = 4
+        else:
+            prefix_byte_len = 1
 
-    # @staticmethod
-    # def check_decode(s_base58: str) -> dict:
-    #     """_summary_
+        prefix = raw_hex[:prefix_byte_len]
+        payload = raw_hex[prefix_byte_len:-4]
+        checksum = raw_hex[-4:]
+        # Verify checksum
+        double_sha256_hex, new_checksum = BtcHash.double_sha256(value=prefix + payload)
+        if not (new_checksum == checksum):
+            raise ValueError('Checksum not valid')
 
-    #     Args:
-    #         s_base58 (str): Base58Check encoded string
-
-    #     Returns:
-    #         dict: checksum (hex str), payload (hex str), version (hex str)
-    #     """
-    #     # Char len 76 => Compressed, 74 => Not Compressed
-    #     # 2-Bytes for prefix
-    #     # 64-Bytes for Payload (256-Bit [64-Byte[] key)
-    #     # 2-Bytes for compressed (optional)
-    #     # 8-Bytes for checksum
-    #     raw_hex = Base58.decode(s_base58=s_base58)
-    #     checksum = raw_hex[-8:]
-    #     # prefix is usually 1-Byte except xpub, xprv, tpub, tprv, bc1, tb1
-    #     first_byte = raw_hex[:2]
-    #     if first_byte != "04":
-    #         prefix_byte_char_len = 2
-    #     else:
-    #         prefix_byte_char_len = 8
-    #     prefix = raw_hex[:prefix_byte_char_len]
-    #     payload = raw_hex[prefix_byte_char_len:-8]
-    #     # Verify checksum
-    #     double_sha256_hex, new_checksum = Hash.double_sha256(s_hex=prefix + payload)
-    #     data = {"b58check": s_base58,
-    #             "checksum": checksum,
-    #             "checksum_match": new_checksum == checksum,
-    #             "hex": raw_hex,
-    #             "payload": payload,
-    #             "prefix": prefix,
-    #             }
-    #     return data
+        return (prefix, payload, checksum)
