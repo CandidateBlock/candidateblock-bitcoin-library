@@ -16,12 +16,11 @@ import os
 
 from .prefix import Prefix
 from .base58 import Base58
-from .bip39_word_list import bip39_english
+from .mnem_bip39_word_list import bip39_english
 from .keys import Keys
 
 # https://iancoleman.io/bip39/
 # https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki Hierarchical Deterministic Wallets
-# https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki Mnemonic code for generating deterministic keys
 # https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki Multi-Account Hierarchy for Deterministic Wallets
 
 
