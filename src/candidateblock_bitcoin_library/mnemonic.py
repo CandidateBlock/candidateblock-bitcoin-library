@@ -5,9 +5,9 @@
 # https://iancoleman.io/bip39/
 # https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki Mnemonic code for generating deterministic keys
 
-import hashlib
 import os
 
+from .btc_hash import BtcHash
 from .mnem_bip39_word_list import bip39_english
 
 
@@ -83,6 +83,7 @@ class Mnemonic(object):
         The mnemonic code is the sequence of words.
 
         Args:
+            entropy (bytes): entropy (a cryptographically secure random number)
             words (int): Number of words only valid values 12, 15, 18, 21 or 24
 
         Returns:
@@ -94,7 +95,7 @@ class Mnemonic(object):
         entropy_bits, entropy_checksum_bits, checksum_bits = self._words_to_bits(
             words=words)
         # SHA-256 of entropy AS padded HEX STRING not integer
-        entropy_sha256 = hashlib.sha256(entropy).digest()
+        entropy_sha256 = BtcHash.sha256(entropy)
         entropy_sha256_int = int.from_bytes(
             entropy_sha256, byteorder='big', signed=False)
 
@@ -126,7 +127,7 @@ class Mnemonic(object):
         logic shift the bits in to the correct integer place. Verify the checksum is valid.
 
         Args:
-            str: A string storing Mnemonic 12-24 words
+            bip39_mnemonic (str): A string storing Mnemonic 12-24 words
 
         Returns:
             bytes: entropy (orginal entropy, a cryptographically secure random number)
@@ -148,7 +149,7 @@ class Mnemonic(object):
         # SHA-256 of entropy AS padded HEX STRING not integer
         entropy = entropy_int.to_bytes(length=int(
             entropy_bits / 8), byteorder='big', signed=False)
-        entropy_sha256 = hashlib.sha256(entropy).digest()
+        entropy_sha256 = BtcHash.sha256(entropy)
         entropy_sha256_int = int.from_bytes(
             entropy_sha256, byteorder='big', signed=False)
 
@@ -183,3 +184,26 @@ class Mnemonic(object):
         entropy = Mnemonic._generate_entropy(num_bytes=entropy_bytes)
         mnemonic_sentence = Mnemonic.encode(entropy=entropy, words=words)
         return mnemonic_sentence
+
+    @classmethod
+    def mnemonic_to_seed(self, mnemonic_sentence: str, passphrase: str = "") -> bytes:
+        """Mnemonic To Seed
+
+        To create a binary seed from the mnemonic, we use the PBKDF2 function
+        with a mnemonic sentence (in UTF-8 NFKD) used as the password and the
+        string "mnemonic" + passphrase (again in UTF-8 NFKD) used as the salt.
+        The iteration count is set to 2048 and HMAC-SHA512 is used as the
+        pseudo-random function. The length of the derived key is 512 bits (64 bytes).
+
+        Args:
+            mnemonic_sentence (str): A string storing Mnemonic 12-24 words
+
+        Returns:
+            bytes: seed 512 bits (64 bytes).
+        """
+        mnemonic_bytes = mnemonic_sentence.encode('utf-8')
+        passphrase = 'mnemonic' + passphrase
+        passphrase_bytes = passphrase.encode('utf-8')
+        stretched_bytes = BtcHash.pbkdf2_hmac(
+            password=mnemonic_bytes, salt=passphrase_bytes)
+        return stretched_bytes[:64]

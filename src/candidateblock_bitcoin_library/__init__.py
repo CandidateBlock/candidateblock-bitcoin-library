@@ -19,10 +19,10 @@ from .keys import Keys
 from .mnemonic import Mnemonic
 from .prefix import Prefix
 from .version import __version__ as version
-from .wallet import Wallet
+from .hd_wallet import HdWallet
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 __version__ = version
-__all__ = ["Base58", "BtcHash", "Keys", "Mnemonic", "Prefix", "Wallet"]
+__all__ = ["Base58", "BtcHash", "Keys", "Mnemonic", "Prefix", "HdWallet"]

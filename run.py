@@ -7,7 +7,7 @@ import candidateblock_bitcoin_library as cbl
 
 if __name__ == "__main__":
     print("*" * 120 + "\n* Wallet\n" + "*" * 120)
-    wallet = cbl.Wallet()
+    wallet = cbl.HdWallet()
     # # valid values 12, 15, 18, 21 or 24
     # wallet.bip39_generate_mnemonic(words=24)
     # print(wallet.bip39_mnemonic)
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     print(f'master_chain_code_256 0x: {master_chain_code_256.hex()}')
 
     print("-" * 120 + "\n* Mnemonic To 512-Bit Root Seed\n" + "-" * 120)
-    wallet.bip32_master_key_generation(seed=seed_bytes)
+    wallet.master_key_generation(seed=seed_bytes)
 
     keys = cbl.Keys()
     keys.private_key = int.from_bytes(
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # M/0'
     print("-" * 120 + "\n* m/0'\n" + "-" * 120)
-    wallet.bip32_child_key_derivation(parent_key=master_private_key_256,
+    wallet.child_key_derivation(parent_key=master_private_key_256,
                                       parent_chaincode=master_chain_code_256,
                                       depth=1,
                                       index=0 + 2**31,
