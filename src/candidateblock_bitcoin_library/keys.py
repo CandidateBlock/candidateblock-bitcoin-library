@@ -8,6 +8,7 @@ import ecdsa
 
 from .base58 import Base58
 from .btc_hash import BtcHash
+from .prefix import Prefix
 
 
 class Keys(object):
@@ -245,3 +246,21 @@ class Keys(object):
                 # "\x02" prefix byte if y is even
                 pub_key = b'\x02' + x_pt
         return pub_key
+
+    @classmethod
+    def btc_address_p2pkh(self, pub_key: bytes = b'') -> str:
+        """Convert the Public Key to a Pay To PubKey Hash (P2PKH) Bitcoin address
+
+        The Public Key can be compressed (33-Bytes) or uncompressed (32-Bytes)
+        it is hashed via HASH160 resulting in 160-Bits, 20-Bytes (a reduction)
+        The result is prefixed with PayToPubKeyHash 0x00 and Base58Check encoded
+
+        Args:
+            pub_key (bytes): Public Key 32/33-bytes, 256/264-bits
+
+        Returns:
+            str: P2PKH Bitcoin address Base58Check encoded
+        """
+        hash160 = BtcHash.hash160(value=pub_key)
+        p2pkh_address = Base58.check_encode(payload=Prefix.PAY_TO_PUBKEY_HASH + hash160)
+        return p2pkh_address

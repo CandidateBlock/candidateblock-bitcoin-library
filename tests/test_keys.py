@@ -121,11 +121,11 @@ class TestKeys:
         assert pub_key == result
 
         # Public Key Uncompressed as Bitcion Address (Base58Check)
-        pub_key_hash160 = cbl.BtcHash.hash160(value=pub_key)
-        btc_address = cbl.Base58.check_encode(
-            payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + pub_key_hash160)
+        # pub_key_hash160 = cbl.BtcHash.hash160(value=pub_key)
+        # btc_address = cbl.Base58.check_encode(
+        #     payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + pub_key_hash160)
+        btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key)
         result = "1thMirt546nngXqyPEz532S8fLwbozud8"
-
         assert btc_address == result
 
         # Public Key Compressed
@@ -135,8 +135,9 @@ class TestKeys:
         assert pub_key == result
 
         # Public Key Compressed as Bitcion Address (Base58Check)
-        pub_key_hash160 = cbl.BtcHash.hash160(value=pub_key)
-        btc_address = cbl.Base58.check_encode(
-            payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + pub_key_hash160)
+        # pub_key_hash160 = cbl.BtcHash.hash160(value=pub_key)
+        # btc_address = cbl.Base58.check_encode(
+        #     payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + pub_key_hash160)
+        btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key)
         result = "14cxpo3MBCYYWCgF74SWTdcmxipnGUsPw3"
         assert btc_address == result
