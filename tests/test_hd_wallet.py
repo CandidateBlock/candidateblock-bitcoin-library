@@ -3,7 +3,7 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 import csv
 
-import pytest
+# import pytest
 from bip39_test_vectors import bip39_test_vectors
 
 import candidateblock_bitcoin_library as cbl
@@ -48,8 +48,8 @@ class TestHdWallet:
         # BIP-39 Mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
         seed = bytes.fromhex(
             '5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4')
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         extended_key = cbl.HdWallet.encode(
             key=master_priv_key, chain_code=master_chain_code, parent_key=b'', depth=0, child=0, is_master=True, is_private=True, is_mainnet=True)
         assert extended_key == "xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu"
@@ -60,8 +60,8 @@ class TestHdWallet:
         # BIP-39 Mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
         seed = bytes.fromhex(
             '5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4')
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         extended_key = cbl.HdWallet.encode(
             key=master_priv_key, chain_code=master_chain_code, parent_key=b'', depth=0, child=0, is_master=True, is_private=True, is_mainnet=False)
         assert extended_key == "tprv8ZgxMBicQKsPe5YMU9gHen4Ez3ApihUfykaqUorj9t6FDqy3nP6eoXiAo2ssvpAjoLroQxHqr3R5nE3a5dU3DHTjTgJDd7zrbniJr6nrCzd"
@@ -78,8 +78,8 @@ class TestHdWallet:
             # passphrase = 'TREZOR'
             bip39_seed = bytes.fromhex(test_data[2])
             extended_key = test_data[3]
-            master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-                seed=bip39_seed)
+            values = cbl.HdWallet.master_key_generation(seed=bip39_seed)
+            master_priv_key, master_chain_code, master_fingerprint = values
             ext_key = cbl.HdWallet.encode(
                 key=master_priv_key, chain_code=master_chain_code, parent_key=b'', depth=0, child=0, is_master=True, is_private=True, is_mainnet=True)
             assert ext_key == extended_key
@@ -93,11 +93,10 @@ class TestHdWallet:
         # BIP-39 Mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
         seed = bytes.fromhex(
             '5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4')
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         depth = 1
-        HARDEND = 2**31
-        index = HARDEND + 0
+        index = cbl.HdWallet.HARDEND + 0
         is_private = True
         is_master = False
         is_mainnet = True
@@ -113,10 +112,9 @@ class TestHdWallet:
         # BIP-39 Mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
         seed = bytes.fromhex(
             '5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4')
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         depth = 1
-        HARDEND = 2**31
         index = 0
         is_private = True
         is_master = False
@@ -133,12 +131,11 @@ class TestHdWallet:
         # BIP-39 Mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
         seed = bytes.fromhex(
             '5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4')
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         parent_key = master_priv_key
         depth = 1
-        HARDEND = 2**31
-        index = HARDEND + 0
+        index = cbl.HdWallet.HARDEND + 0
         is_private = True
         is_master = False
         is_mainnet = True
@@ -150,7 +147,7 @@ class TestHdWallet:
 
         parent_key = child_ext_key
         depth = 2
-        index = HARDEND + 0
+        index = cbl.HdWallet.HARDEND + 0
         child_ext_key, child_chain_code = cbl.HdWallet.child_key_derivation(
             parent_key=child_ext_key, parent_chaincode=child_chain_code, index=index, is_private=is_private)
         child_ext_key_2_b58 = cbl.HdWallet.encode(key=child_ext_key, chain_code=child_chain_code,
@@ -164,12 +161,11 @@ class TestHdWallet:
         # BIP-39 Mnemonic = abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
         seed = bytes.fromhex(
             '5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4')
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         parent_key = master_priv_key
         depth = 1
-        HARDEND = 2**31
-        index = HARDEND + 44  # Purpose 44 (BIP44)
+        index = cbl.HdWallet.HARDEND + 44  # Purpose 44 (BIP44)
         is_private = True
         is_master = False
         is_mainnet = True
@@ -181,7 +177,7 @@ class TestHdWallet:
 
         parent_key = child_ext_key
         depth = 2
-        index = HARDEND + 1  # Coin = 1 => Bitcoin
+        index = cbl.HdWallet.HARDEND + 1  # Coin = 1 => Bitcoin
         child_ext_key, child_chain_code = cbl.HdWallet.child_key_derivation(
             parent_key=child_ext_key, parent_chaincode=child_chain_code, index=index, is_private=is_private)
         child_ext_key_2_b58 = cbl.HdWallet.encode(key=child_ext_key, chain_code=child_chain_code,
@@ -190,7 +186,7 @@ class TestHdWallet:
 
         parent_key = child_ext_key
         depth = 3
-        index = HARDEND + 0  # Account = 0
+        index = cbl.HdWallet.HARDEND + 0  # Account = 0
         child_ext_key, child_chain_code = cbl.HdWallet.child_key_derivation(
             parent_key=child_ext_key, parent_chaincode=child_chain_code, index=index, is_private=is_private)
         child_ext_key_2_b58 = cbl.HdWallet.encode(key=child_ext_key, chain_code=child_chain_code,
@@ -229,8 +225,8 @@ class TestHdWallet:
     def test_bip32_test_vector_one(self):
         seed = bytes.fromhex('000102030405060708090a0b0c0d0e0f')
         # Chain m
-        master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-            seed=seed)
+        values = cbl.HdWallet.master_key_generation(seed=seed)
+        master_priv_key, master_chain_code, master_fingerprint = values
         extended_key = cbl.HdWallet.encode(
             key=master_priv_key, chain_code=master_chain_code, parent_key=b'', depth=0, child=0, is_master=True, is_private=True, is_mainnet=True)
         assert extended_key == "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"
@@ -253,8 +249,8 @@ class TestHdWallet:
                 if depth == 0 and level == "M":
                     # Master node
                     is_master = True
-                    child_ext_key, child_chain_code = cbl.HdWallet.master_key_generation(
-                        seed=seed)
+                    values = cbl.HdWallet.master_key_generation(seed=seed)
+                    child_ext_key, child_chain_code, master_fingerprint = values
                     index = 0
                 else:
                     # child node
@@ -303,8 +299,8 @@ class TestHdWallet:
                     for depth, level in enumerate(path_array):
                         if depth == 0 and level == "M":
                             # Master node
-                            master_priv_key, master_chain_code = cbl.HdWallet.master_key_generation(
-                                seed=seed)
+                            values = cbl.HdWallet.master_key_generation(seed=seed)
+                            master_priv_key, master_chain_code, master_fingerprint = values
                             # Update parent for next loop
                             parent_key = master_priv_key
                             parent_chaincode = master_chain_code

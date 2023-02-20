@@ -9,7 +9,8 @@ We will only implement industry-standard-based hierarchical
 deterministic (HD BIP-32/BIP-44) wallet with a
 mnemonic seed (BIP-39) for backup.
 """
-
+import re
+import typing
 from .base58 import Base58
 from .btc_hash import BtcHash
 from .keys import Keys
@@ -30,12 +31,18 @@ class HdWallet(object):
     mnemonic seed (BIP-39) for backup.
     """
 
+    HARDEND = 2**31  # 2^31 = 0x80000000
+
     @ staticmethod
     def master_key_generation(seed: bytes = b''):
         seed_hmac_sha512 = BtcHash.hmac_sha512(key=b"Bitcoin seed", msg=seed)
         master_priv_key = seed_hmac_sha512[:32]    # Left 256-bits
         master_chain_code = seed_hmac_sha512[32:]  # Right 256-bits
-        return (master_priv_key, master_chain_code)
+        # Private Key so get Public key fingerprint
+        pub_key = Keys.generate_pub_key(priv_key=master_priv_key, is_compressed=True)
+        key_hash160 = BtcHash.hash160(value=pub_key)
+        master_fingerprint = key_hash160[:4]    # first 32-bits 4-bytes
+        return (master_priv_key, master_chain_code, master_fingerprint)
 
     @staticmethod
     def encode(key: bytes = b'', chain_code: bytes = b'', parent_key: bytes = b'', depth: int = 0, child: int = 0,
@@ -108,13 +115,14 @@ class HdWallet(object):
         b58_check = Base58.check_encode(payload=extended_key)
         return b58_check
 
-    @ staticmethod
-    def child_key_derivation(parent_key: bytes,
+    @ classmethod
+    def child_key_derivation(self,
+                             parent_key: bytes,
                              parent_chaincode: bytes,
                              index: int,
                              is_private: bool):
         # Is the child a hardened key
-        if index >= 2**31:
+        if index >= self.HARDEND:
             # I = HMAC-SHA512(Key=cpar, Data=0x00 + ser256(kpar) + ser32(i))
             # Note: The 0x00 pads the PRIVATE key to make it 33 bytes long.
             hash_input = b"\x00"
@@ -123,20 +131,17 @@ class HdWallet(object):
             hmac_sha512 = BtcHash.hmac_sha512(key=parent_chaincode, msg=hash_input)
             child_chaincode = hmac_sha512[32:]  # Right 256-bits
             # PRIVATE child key
-            parent_key_int = int.from_bytes(
-                bytes=parent_key, byteorder='big', signed=False)
             child_private_key = hmac_sha512[:32]    # Left 256-bits
-            child_private_key_int = int.from_bytes(
-                bytes=child_private_key, byteorder='big', signed=False)
-            n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-            if child_private_key_int == 0 or child_private_key_int >= n:
-                #  resulting key is invalid, and one should proceed with the next value for i.
-                #  (Note: this has probability lower than 1 in 2127.)
+            if Keys.is_priv_key_valid(priv_key=child_private_key) is False:
                 # TODO - fix this use next index value to get next key
                 pass
 
+            child_private_key_int = int.from_bytes(
+                bytes=child_private_key, byteorder='big', signed=False)
+            parent_key_int = int.from_bytes(
+                bytes=parent_key, byteorder='big', signed=False)
             child_private_key_int = int(
-                (child_private_key_int + parent_key_int) % n)
+                (child_private_key_int + parent_key_int) % Keys._n)
             child_private_key = child_private_key_int.to_bytes(
                 length=32, byteorder='big', signed=False)
             child_key = child_private_key
@@ -149,107 +154,59 @@ class HdWallet(object):
             hmac_sha512 = BtcHash.hmac_sha512(key=parent_chaincode, msg=hash_input)
             child_chaincode = hmac_sha512[32:]  # Right 256-bits
             # PUBLIC child key
-            parent_key_int = int.from_bytes(
-                bytes=parent_key, byteorder='big', signed=False)
             child_public_key = hmac_sha512[:32]    # Left 256-bits
-            child_public_key_int = int.from_bytes(
-                bytes=child_public_key, byteorder='big', signed=False)
-            n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-            if child_public_key_int == 0 or child_public_key_int >= n:
-                #  resulting key is invalid, and one should proceed with the next value for i.
-                #  (Note: this has probability lower than 1 in 2127.)
+            if Keys.is_priv_key_valid(priv_key=child_public_key) is False:
                 # TODO - fix this use next index value to get next key
                 pass
 
+            child_public_key_int = int.from_bytes(
+                bytes=child_public_key, byteorder='big', signed=False)
+            parent_key_int = int.from_bytes(
+                bytes=parent_key, byteorder='big', signed=False)
             child_public_key_int = int(
-                (child_public_key_int + parent_key_int) % n)
+                (child_public_key_int + parent_key_int) % Keys._n)
             child_public_key = child_public_key_int.to_bytes(
                 length=32, byteorder='big', signed=False)
             child_key = child_public_key
 
         return (child_key, child_chaincode)
 
-        # @ staticmethod
-        # def child_key_derivation(parent_key: bytes,
-        #                          parent_chaincode: bytes,
-        #                          depth: int,
-        #                          index: int,
-        #                          is_private: bool):
-        #     """Mnemonic words are generated automatically by the wallet using the
-        #     standardized process defined in BIP-39.
+    @classmethod
+    def parse_path(self, path: str = "") -> typing.List[int]:
+        """Parse Path
+        BIP-32 HD wallet path parse and clean hardended
+        char ' to H and all upper case
 
-        #     Create a random sequence (entropy) of 128 to 256 bits.
-        #     Create a checksum of the random sequence by taking the first (entropy-length/32) bits of its SHA256 hash.
-        #     Add the checksum to the end of the random sequence.
-        #     Split the result into 11-bit length segments.
-        #     Map each 11-bit value to a word from the predefined dictionary of 2048 words.
-        #     The mnemonic code is the sequence of words.
+        Args:
+            path (str): in form m/84'/0'/1' or m/84h/0h/1h
 
-        #     Args:
-        #         words (int): Number of words only valid values 12, 15, 18, 21 or 24
+        Returns:
+            List[int]: Array of integers with two dimensions 1. depth, 2. index + hardened [0x800000] if applicable
+        """
+        if path is None or path == "":
+            raise ValueError('path argument is empty')
 
-        #     Returns:
-        #         str: A string storing Mnemonic 12-24 words
-        #     """
+        # Skip leading spaces & other spacing chars
+        path = path.strip(" \t\n\v\f\r")
 
-        #     # Is this a public or private parent key
-        #     if is_private:
-        #         parent_priv_key = parent_key
-        #         keys = Keys()
-        #         keys.private_key = int.from_bytes(
-        #             bytes=parent_priv_key, byteorder='big', signed=False)
-        #         keys.generate_public_key()
-        #         parent_pub_key = bytes.fromhex(keys.get_public_key_compressed_hex())
-        #     else:
-        #         parent_priv_key = None
-        #         parent_pub_key = parent_key
+        # # Check if string only contains allowed characters
+        # if re.findall("[^0-9]", path):
+        #     raise ValueError(
+        #         "path string argument should contain only mh/'0-9 characters")
 
-        #     # Is the child a hardened key
-        #     if index >= 2**31:
-        #         #  = HMAC - SHA512(Key=cpar, Data=0x00 | | ser256(kpar) | | ser32(i)). ()
-        #         if not is_private:
-        #             raise Exception("Can't do private derivation on public key!")
-        #         # Note: The 0x00 pads the PRIVATE key to make it 33 bytes long.
-        #         hash_input = b"\x00"
-        #         hash_input += parent_priv_key
-        #         hash_input += index.to_bytes(length=4, byteorder='big', signed=False)
-        #         hmac_sha512 = hmac.new(key=parent_chaincode,
-        #                                msg=hash_input,
-        #                                digestmod=hashlib.sha512).digest()
-        #     else:
-        #         # Note: COMPRESSED PUBLIC key is 33 bytes long
-        #         hash_input = parent_pub_key
-        #         hash_input += index.to_bytes(length=4, byteorder='big', signed=False)
-        #         hmac_sha512 = hmac.new(key=parent_chaincode,
-        #                                msg=hash_input,
-        #                                digestmod=hashlib.sha512).digest()
-        #     if is_private:
-        #         child_chaincode = hmac_sha512[32:]  # Right 256-bits
-        #         # PRIVATE child key
-        #         child_private_key = hmac_sha512[:32]    # Left 256-bits
-        #         parent_private_key_int = int.from_bytes(
-        #             bytes=parent_priv_key, byteorder='big', signed=False)
-        #         child_private_key_int = int.from_bytes(
-        #             bytes=child_private_key, byteorder='big', signed=False)
-        #         n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
-        #         child_private_key_int = int(
-        #             (child_private_key_int + parent_private_key_int) % n)
-        #         child_private_key = child_private_key_int.to_bytes(
-        #             length=32, byteorder='big', signed=False)
-        #         # Get parent PUBLIC key fingerprint
-        #         # 256-byte hash = 32-Bytes = 64 Hex Chars
-        #         key_sha256 = hashlib.new("sha256", parent_pub_key).digest()
-        #         # 160-byte hash (smaller for less data in Bitcoin address) = 20-Bytes = 40 Hex Chars
-        #         key_ripemd160 = hashlib.new("ripemd160", key_sha256).digest()
-        #         parent_key_fingerprint = key_ripemd160[:4]    # first 32-bits 4-bytes
-        #     else:
-        #         pass
+        path = path.upper()
+        path = path.replace("\'", "H")
+        path_array = path.split("/")
+        path_result = []
+        for depth, level in enumerate(path_array):
+            if depth == 0:
+                index = 0
+            else:
+                hardend = level.split("H")
+                if len(hardend) > 1:
+                    index = self.HARDEND + int(hardend[0])
+                else:
+                    index = int(hardend[0])
+            path_result.append([depth, index])
 
-        #     xprv = int(depth).to_bytes(length=1, byteorder='big', signed=False)
-        #     xprv += parent_key_fingerprint
-        #     xprv += index.to_bytes(length=4, byteorder='big', signed=False)
-        #     xprv += child_chaincode
-        #     xprv += b"\x00" + child_private_key
-        #     xprv_base58 = Base58.check_encode(
-        #         s_hex=xprv.hex(), version_prefix=Prefix.BIP_32_EXTENDED_PRIVATE_KEY)
-        #     print(f'xprv_base58: {xprv_base58}')
+        return path_result
