@@ -15,7 +15,7 @@
 # *******************
 # $ cd docs
 # $ make clean
-# $ rm candidateblock_bitcoin_library.*
+# $ rm source/candidateblock_bitcoin_library.*
 # $ sphinx-apidoc --force --separate  -o ./source ../src/candidateblock_bitcoin_library
 # $ make html
 
