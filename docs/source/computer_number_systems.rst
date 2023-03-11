@@ -2,9 +2,9 @@ Computer Number Systems
 =======================
 
 A single digit in a computer is call a 'Bit'.
-Bits are organised in to structures as multiples of Base 2 (Binary).
-In our examples above we have 8 Bits, which is called a 'Byte'.
-The table blow shows as the number of Bits grows (multiples of base 2) the names change.
+Bits are organised in to structures as multiples of Base\ :sub:`2` (Binary).
+In the previous examples we have 8-Bits, which is called a 'Byte'.
+The table blow shows as the number of Bits grows (multiples of base\ :sub:`2`) the names change.
 
 Bits
 ****
