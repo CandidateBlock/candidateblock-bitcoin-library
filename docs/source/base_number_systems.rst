@@ -22,7 +22,7 @@ Numbers are represented in an overflow system, with each column being 10 times l
 Examples
 --------
 
-In the following examples values have their base defined by the subscipt text as Number\ :sub:`Base`.
+In the following examples values have their base defined by the subscript text as Number\ :sub:`Base`.
 
 Value = 6\ :sub:`10`
 
@@ -66,14 +66,14 @@ Symbols are: 0 1 (Total 2)
 
 Numbers are represented in an overflow system, with each column being 2 times larger than the last, due to base\ :sub:`2`. ::
 
-      1 = 2 ^ 0 =   1
-      2 = 2 ^ 1 =   2
-      4 = 2 ^ 2 =   4
-      8 = 2 ^ 3 =   8
-     16 = 2 ^ 4 =  16
-     32 = 2 ^ 5 =  32
-     64 = 2 ^ 6 =  64
-    128 = 2 ^ 7 = 128
+           1 = 2 ^ 0 =   1
+          10 = 2 ^ 1 =   2
+         100 = 2 ^ 2 =   4
+        1000 = 2 ^ 3 =   8
+       10000 = 2 ^ 4 =  16
+      100000 = 2 ^ 5 =  32
+     1000000 = 2 ^ 6 =  64
+    10000000 = 2 ^ 7 = 128
     etc...
 
 Examples
@@ -110,7 +110,7 @@ Value = 255\ :sub:`10`
 +-----+----+----+----+---+---+---+---+
 
 | (128 x 1) + (64 x 1) + (32 x 1) + (16 x 1) + (8 x 1) + (4 x 1) + (2 x 1) + (1 x 1) = 11111111\ :sub:`2`
-| 11111111\ :sub:`2` = 21\ :sub:`10`
+| 11111111\ :sub:`2` = 255\ :sub:`10`
 
 Base\ :sub:`16` (HEX / Hexadecimal)
 ***************
@@ -147,7 +147,7 @@ Symbols are: 0 1 2 3 4 5 6 7 8 9 A B C D E F (Total 16)
 +-------------+---------+
 | B           | 11      |
 +-------------+---------+
-| C           | 1       |
+| C           | 12      |
 +-------------+---------+
 | D           | 13      |
 +-------------+---------+
@@ -159,10 +159,10 @@ Symbols are: 0 1 2 3 4 5 6 7 8 9 A B C D E F (Total 16)
 
 Numbers are represented in an overflow system, with each column being 16 times larger than the last, due to base\ :sub:`16`. ::
 
-        1 = 16 ^ 0 =   1
-       16 = 16 ^ 1 =   16
-      256 = 16 ^ 2 =   256
-     4096 = 16 ^ 3 =   4096
+        1 = 16 ^ 0 =    1
+       10 = 16 ^ 1 =   16
+      100 = 16 ^ 2 =  256
+     1000 = 16 ^ 3 = 4096
     etc...
 
 Examples
@@ -201,3 +201,8 @@ Value = 255\ :sub:`10`
 | (4096 x 0) + (256 x 0) + (16 x 15) + (1 x 15) = 00FF\ :sub:`16`
 | 00FF\ :sub:`16` = 255\ :sub:`10`
 
+As you can see Hex is more efficient in symbolising longer numbers, compare the same number 255 in the various bases. ::
+
+    11111111 Base  2 (Binary)  8 Symbols/Characters
+    255      Base 10 (Decimal) 3 Symbols/Characters
+    FF       Base 16 (Hex)     2 Symbols/Characters
