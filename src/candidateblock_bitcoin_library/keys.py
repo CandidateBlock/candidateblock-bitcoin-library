@@ -248,7 +248,7 @@ class Keys(object):
         return pub_key
 
     @classmethod
-    def btc_address_p2pkh(self, pub_key: bytes = b'') -> str:
+    def btc_address_p2pkh(self, pub_key: bytes = b'', is_mainnet: bool = True) -> str:
         """Convert the Public Key to a Pay To PubKey Hash (P2PKH) Bitcoin address
 
         The Public Key can be compressed (33-Bytes) or uncompressed (32-Bytes)
@@ -262,5 +262,11 @@ class Keys(object):
             str: P2PKH Bitcoin address Base58Check encoded
         """
         hash160 = BtcHash.hash160(value=pub_key)
-        p2pkh_address = Base58.check_encode(payload=Prefix.PAY_TO_PUBKEY_HASH + hash160)
+        if is_mainnet:
+            payload = Prefix.PAY_TO_PUBKEY_HASH + hash160
+        else:
+            payload = Prefix.TESTNET_PAY_TO_PUBKEY_HASH + hash160
+
+        p2pkh_address = Base58.check_encode(payload=payload)
         return p2pkh_address
+

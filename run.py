@@ -10,7 +10,7 @@ if __name__ == "__main__":
     assert seed == bytes.fromhex(
         '47c8c993c18b8480c78e5925ab70322c98d4f3eae68b9033bb175b6d6a1dc9bc7a001f1cef3821af3df42a42b7913081782164ca6ff064a4d9cf2911306776c7')
 
-    path = "m/44'/1'/0'"
+    path = "m/44'/1'/0'/0/0"
     print(f"path: {path}")
     path_array = cbl.HdWallet.parse_path(path=path)
     print(f"path_array: {path_array}")
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         else:
             str_index = str(index)
         print(f"depth: {depth} | index: {str_index} | xprv: {new_xprv}")
-    assert "tprv8g5rVr2zQzTvibuo1AsHxqFRPL337JFqYD4idspqP7rC61ixBs2dKQtD8QPX9ZeFiZXEAt1NEjRTjbztVB6EJf1Q4KCmAjTMv3E8GExGBww" == new_xprv
+    # assert "tprv8g5rVr2zQzTvibuo1AsHxqFRPL337JFqYD4idspqP7rC61ixBs2dKQtD8QPX9ZeFiZXEAt1NEjRTjbztVB6EJf1Q4KCmAjTMv3E8GExGBww" == new_xprv
 
     # Public to Private Key
     is_private = False
@@ -54,4 +54,15 @@ if __name__ == "__main__":
         priv_key=child_ext_key, is_compressed=True)
     new_xpub = cbl.HdWallet.encode(key=new_public_key, chain_code=child_chain_code, parent_key=parent_key,
                                    depth=depth, child=index, is_master=is_master, is_private=is_private, is_mainnet=is_mainnet)
-    assert "tpubDCmteG5EZN9bc4watpXtNEuXxMYyGdSk7WfVvPs8oPeavVyipFrDVuW5JZriA924UgXrHfiXJK4N7GVtMZeqEeeRiqCjNvNVR2XcRnvshsV" == new_xpub
+    print(f"depth: {depth} | index: {str_index} | xpub: {new_xpub}")
+    # assert "tpubDCmteG5EZN9bc4watpXtNEuXxMYyGdSk7WfVvPs8oPeavVyipFrDVuW5JZriA924UgXrHfiXJK4N7GVtMZeqEeeRiqCjNvNVR2XcRnvshsV" == new_xpub
+
+    # Print root
+    wif = cbl.Keys.priv_key_wif_encode(
+        priv_key=child_ext_key, is_compressed=True, is_mainnet=is_mainnet)
+    address = cbl.Keys.btc_address_p2pkh(pub_key=new_public_key, is_mainnet=is_mainnet)
+    print(">" * 3 + " Root")
+    print(f"address: {address}")
+    print(f"Public Key (HEX): {new_public_key.hex()}")
+    print(f"Private Key (WIF): {wif}")
+    print(f"Private Key (HEX): {child_ext_key.hex()}")

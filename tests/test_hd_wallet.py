@@ -216,7 +216,7 @@ class TestHdWallet:
             priv_key=child_ext_key, is_compressed=True)
         assert pub_key.hex() == "02a7451395735369f2ecdfc829c0f774e88ef1303dfe5b2f04dbaab30a535dfdd6"
         # Check Public Key (Compressed) as Bitcoin Address
-        address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key)
+        address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key, is_mainnet=True)
         # address = cbl.Base58.check_encode(payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + cbl.BtcHash.hash160(pub_key))
         assert address == "16JcQVoL61QsLCPS6ek8UJZ52eRfaFqLJt"
 
@@ -331,6 +331,6 @@ class TestHdWallet:
                                 priv_key=child_ext_key, is_compressed=True)
                             assert pub_key == public_key
                             # Check Public Key (Compressed) as Bitcoin Address
-                            btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key)
+                            btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key, is_mainnet=is_mainnet)
                             # address = cbl.Base58.check_encode(payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + cbl.BtcHash.hash160(pub_key))
                             assert btc_address == address

@@ -1,7 +1,7 @@
 # Copyright (c) 2022 CandidateBlock
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
-import pytest
+# import pytest
 
 import candidateblock_bitcoin_library as cbl
 
@@ -124,7 +124,7 @@ class TestKeys:
         # pub_key_hash160 = cbl.BtcHash.hash160(value=pub_key)
         # btc_address = cbl.Base58.check_encode(
         #     payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + pub_key_hash160)
-        btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key)
+        btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key, is_mainnet=True)
         result = "1thMirt546nngXqyPEz532S8fLwbozud8"
         assert btc_address == result
 
@@ -138,6 +138,6 @@ class TestKeys:
         # pub_key_hash160 = cbl.BtcHash.hash160(value=pub_key)
         # btc_address = cbl.Base58.check_encode(
         #     payload=cbl.Prefix.PAY_TO_PUBKEY_HASH + pub_key_hash160)
-        btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key)
+        btc_address = cbl.Keys.btc_address_p2pkh(pub_key=pub_key, is_mainnet=True)
         result = "14cxpo3MBCYYWCgF74SWTdcmxipnGUsPw3"
         assert btc_address == result

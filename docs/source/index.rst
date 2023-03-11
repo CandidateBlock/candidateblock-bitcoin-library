@@ -11,6 +11,8 @@ Welcome to CandidateBlock Bitcoin Library's documentation!
    :caption: Contents:
 
    intro
+   base_number_systems
+   computer_number_systems
    modules
    examples
 
