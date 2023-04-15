@@ -20,11 +20,11 @@ class TestKeys:
     def test_keys_pub_key_gen_two(self):
         # Check range bounds of valid private key
         # Out of range
-        assert cbl.Keys.is_priv_key_valid(b'\x00') is False
+        assert cbl.Keys.is_priv_key_valid(int(0).to_bytes(32, 'big')) is False
         assert cbl.Keys.is_priv_key_valid(
             priv_key=cbl.Keys._n.to_bytes(32, 'big')) is False
         # In range
-        assert cbl.Keys.is_priv_key_valid(b'\x01') is True
+        assert cbl.Keys.is_priv_key_valid(int(1).to_bytes(32, 'big')) is True
         assert cbl.Keys.is_priv_key_valid(
             priv_key=(cbl.Keys._n - 1).to_bytes(32, 'big')) is True
 
@@ -32,7 +32,7 @@ class TestKeys:
         # Check random number is 32-bytes (256-bits) long
         assert len(cbl.Keys.generate_priv_key()) == 32
         # Check in range
-        assert cbl.Keys.generate_priv_key() != b'\x00'
+        assert cbl.Keys.generate_priv_key() != int(0).to_bytes(32, 'big')
         assert cbl.Keys.generate_priv_key() < cbl.Keys._n.to_bytes(32, 'big')
 
     # **************************************************

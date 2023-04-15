@@ -1,4 +1,4 @@
-# Copyright (c) 2022 CandidateBlock
+# Copyright (c) 2023 CandidateBlock
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
@@ -12,7 +12,7 @@ import hashlib
 import hmac
 
 
-class BtcHash(object):
+class Hashes(object):
 
     @staticmethod
     def sha256(value: bytes) -> bytes:
@@ -44,8 +44,8 @@ class BtcHash(object):
         Returns:
             Tuple: (double-SHA256 32-Bytes, check_sum 4-Bytes)
         """
-        first_sha256 = BtcHash.sha256(value)
-        second_sha256 = BtcHash.sha256(first_sha256)
+        first_sha256 = Hashes.sha256(value)
+        second_sha256 = Hashes.sha256(first_sha256)
         return second_sha256, second_sha256[:4]
 
     @staticmethod
@@ -64,7 +64,7 @@ class BtcHash(object):
             bytes: hash160 160-Bits, 20-Bytes
         """
         # 256-byte (32-Byte) hash
-        value_sha256 = BtcHash.sha256(value)
+        value_sha256 = Hashes.sha256(value)
         # 160-byte hash (smaller for less data in Bitcoin address) = 20-Bytes = 40 Hex Chars
         value_ripemd160 = hashlib.new("ripemd160", value_sha256).digest()
         return value_ripemd160

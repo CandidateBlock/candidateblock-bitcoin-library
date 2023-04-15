@@ -1,4 +1,4 @@
-# Copyright (c) 2022 CandidateBlock
+# Copyright (c) 2023 CandidateBlock
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
@@ -7,8 +7,9 @@ import os
 import ecdsa
 
 from .base58 import Base58
-from .btc_hash import BtcHash
+from .hashes import Hashes
 from .prefix import Prefix
+from . import py_secp256k1
 
 
 class Keys(object):
@@ -48,7 +49,9 @@ class Keys(object):
 
         # Collect 256-bits (32-bytes) of random data from the Operating Systems
         # cryptographically secure random number generator
-        return os.urandom(32)
+        # return os.urandom(32)
+        # Replaced with secp256k1 lib
+        return py_secp256k1._key.generate_privkey()
 
     @classmethod
     def is_priv_key_valid(self, priv_key: bytes) -> bool:
@@ -64,8 +67,10 @@ class Keys(object):
         Returns:
             bool: private key is valid
         """
-        priv_key_int = int.from_bytes(bytes=priv_key, byteorder='big', signed=False)
-        return 0 < priv_key_int < self._n
+        # priv_key_int = int.from_bytes(bytes=priv_key, byteorder='big', signed=False)
+        # return 0 < priv_key_int < self._n
+        # Replaced with secp256k1 lib
+        return py_secp256k1.ec_seckey_verify(secret=priv_key, context=None)
 
     @classmethod
     def generate_priv_key(self) -> bytes:
@@ -78,12 +83,17 @@ class Keys(object):
             bytes: Raw 256-bit (32-byte) Private Key = Random Number
         """
         # Generate a random private key
-        is_valid_priv_key = False
-        while not is_valid_priv_key:
-            priv_key = self._random_secret()
-            # Check with in bounds for Bitcoin > 0 and < n
-            is_valid_priv_key = self.is_priv_key_valid(priv_key=priv_key)
-        return priv_key
+        # is_valid_priv_key = False
+        # while not is_valid_priv_key:
+        #     priv_key = self._random_secret()
+        #     # Check with in bounds for Bitcoin > 0 and < n
+        #     is_valid_priv_key = self.is_priv_key_valid(priv_key=priv_key)
+
+        # return priv_key
+        # Replaced with secp256k1 lib
+        prv = py_secp256k1._key.ECKey()
+        prv.generate(compressed=True)
+        return prv.get_bytes()
 
     @classmethod
     def priv_key_wif_encode(self, priv_key: bytes = b'', is_compressed: bool = True, is_mainnet: bool = True) -> str:
@@ -140,7 +150,7 @@ class Keys(object):
         # Check valid checksum
         payload = wif[:-4]
         checksum = wif[-4:]
-        double_hash, new_check_sum = BtcHash.double_sha256(value=payload)
+        double_hash, new_check_sum = Hashes.double_sha256(value=payload)
         if new_check_sum != checksum:
             raise Exception("WIF checksum not correct")
 
@@ -213,39 +223,43 @@ class Keys(object):
         Returns:
             bytes: Public key 32-bytes, 256-bits
         """
-        curve_secp256k1 = ecdsa.ellipticcurve.CurveFp(self._p, self._a, self._b)
-        generator_secp256k1 = ecdsa.ellipticcurve.Point(
-            curve_secp256k1, self._Gx, self._Gy, self._r)
-        priv_key_int = int.from_bytes(bytes=priv_key, byteorder='big', signed=False)
-        # Calculate the public key point (x, y)
-        pub_key_point = priv_key_int * generator_secp256k1
-        x_pt = int(pub_key_point.x()).to_bytes(length=32, byteorder='big', signed=False)
-        y_pt = int(pub_key_point.y()).to_bytes(length=32, byteorder='big', signed=False)
-        if not is_compressed:
-            # "Uncompressed" Public Key Format
-            # "\x04" prefix (1-Byte) -> "Uncompressed"
-            # + X Coordinate as 256-Bit (32-Byte)
-            # + Y Coordinate as 256-Bit (32-Byte)
-            # result string = 520-Bit (65-Byte)
-            pub_key = b'\04' + x_pt + y_pt
-        else:
-            # "Compressed" Public Key Format
-            # "Compressed" means store x coordinate value and y coordinate sign
-            # "\x02" prefix (1-Byte) if y is even
-            # "\x03" prefix (1-Byte) if y is odd
-            # Even or Odd Hex prefix -> "Compressed"
-            # + X Coordinate as 256-Bit (32-Byte)
-            # result string = 264-Bit (33)
-            # This results in nearly a 50% size reduction compared to the
-            # "Uncompressed" Private Key size of 520-Bit (65-Bytes)
-            # 264 / 520 = 50.8%
-            if int.from_bytes(bytes=y_pt, byteorder='big', signed=False) % 2:
-                # "\x03" prefix byte if y is odd
-                pub_key = b'\x03' + x_pt
-            else:
-                # "\x02" prefix byte if y is even
-                pub_key = b'\x02' + x_pt
-        return pub_key
+        # curve_secp256k1 = ecdsa.ellipticcurve.CurveFp(self._p, self._a, self._b)
+        # generator_secp256k1 = ecdsa.ellipticcurve.Point(
+        #     curve_secp256k1, self._Gx, self._Gy, self._r)
+        # priv_key_int = int.from_bytes(bytes=priv_key, byteorder='big', signed=False)
+        # # Calculate the public key point (x, y)
+        # pub_key_point = priv_key_int * generator_secp256k1
+        # x_pt = int(pub_key_point.x()).to_bytes(length=32, byteorder='big', signed=False)
+        # y_pt = int(pub_key_point.y()).to_bytes(length=32, byteorder='big', signed=False)
+        # if not is_compressed:
+        #     # "Uncompressed" Public Key Format
+        #     # "\x04" prefix (1-Byte) -> "Uncompressed"
+        #     # + X Coordinate as 256-Bit (32-Byte)
+        #     # + Y Coordinate as 256-Bit (32-Byte)
+        #     # result string = 520-Bit (65-Byte)
+        #     pub_key = b'\04' + x_pt + y_pt
+        # else:
+        #     # "Compressed" Public Key Format
+        #     # "Compressed" means store x coordinate value and y coordinate sign
+        #     # "\x02" prefix (1-Byte) if y is even
+        #     # "\x03" prefix (1-Byte) if y is odd
+        #     # Even or Odd Hex prefix -> "Compressed"
+        #     # + X Coordinate as 256-Bit (32-Byte)
+        #     # result string = 264-Bit (33)
+        #     # This results in nearly a 50% size reduction compared to the
+        #     # "Uncompressed" Private Key size of 520-Bit (65-Bytes)
+        #     # 264 / 520 = 50.8%
+        #     if int.from_bytes(bytes=y_pt, byteorder='big', signed=False) % 2:
+        #         # "\x03" prefix byte if y is odd
+        #         pub_key = b'\x03' + x_pt
+        #     else:
+        #         # "\x02" prefix byte if y is even
+        #         pub_key = b'\x02' + x_pt
+        # return pub_key
+        # Replaced with secp256k1 lib
+        prv = py_secp256k1._key.ECKey()
+        prv.set(secret=priv_key, compressed=is_compressed)
+        return prv.get_pubkey().get_bytes()
 
     @classmethod
     def btc_address_p2pkh(self, pub_key: bytes = b'', is_mainnet: bool = True) -> str:
@@ -261,7 +275,7 @@ class Keys(object):
         Returns:
             str: P2PKH Bitcoin address Base58Check encoded
         """
-        hash160 = BtcHash.hash160(value=pub_key)
+        hash160 = Hashes.hash160(value=pub_key)
         if is_mainnet:
             payload = Prefix.PAY_TO_PUBKEY_HASH + hash160
         else:
@@ -269,4 +283,3 @@ class Keys(object):
 
         p2pkh_address = Base58.check_encode(payload=payload)
         return p2pkh_address
-

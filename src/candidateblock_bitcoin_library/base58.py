@@ -1,4 +1,4 @@
-# Copyright (c) 2022 CandidateBlock
+# Copyright (c) 2023 CandidateBlock
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
@@ -13,7 +13,7 @@ with the bitcoin network.
 # https://learnmeabitcoin.com/technical/base58
 
 import re
-from .btc_hash import BtcHash
+from .hashes import Hashes
 
 
 class Base58(object):
@@ -126,7 +126,7 @@ class Base58(object):
             raise ValueError('Input payload (bytes) can not be empty')
 
         # Calcuate checksum
-        double_hash, check_sum = BtcHash.double_sha256(value=payload)
+        double_hash, check_sum = Hashes.double_sha256(value=payload)
         raw_bytes = payload + check_sum
         return Base58.encode(input=raw_bytes)
 
@@ -162,7 +162,7 @@ class Base58(object):
         payload = raw_hex[prefix_byte_len:-4]
         checksum = raw_hex[-4:]
         # Verify checksum
-        double_sha256_hex, new_checksum = BtcHash.double_sha256(value=prefix + payload)
+        double_sha256_hex, new_checksum = Hashes.double_sha256(value=prefix + payload)
         if not (new_checksum == checksum):
             raise ValueError('Checksum not valid')
 

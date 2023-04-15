@@ -1,4 +1,4 @@
-# Copyright (c) 2022 CandidateBlock
+# Copyright (c) 2023 CandidateBlock
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
@@ -9,10 +9,10 @@ We will only implement industry-standard-based hierarchical
 deterministic (HD BIP-32/BIP-44) wallet with a
 mnemonic seed (BIP-39) for backup.
 """
-import re
+# import re
 import typing
 from .base58 import Base58
-from .btc_hash import BtcHash
+from .hashes import Hashes
 from .keys import Keys
 from .prefix import Prefix
 
@@ -35,12 +35,12 @@ class HdWallet(object):
 
     @ staticmethod
     def master_key_generation(seed: bytes = b''):
-        seed_hmac_sha512 = BtcHash.hmac_sha512(key=b"Bitcoin seed", msg=seed)
+        seed_hmac_sha512 = Hashes.hmac_sha512(key=b"Bitcoin seed", msg=seed)
         master_priv_key = seed_hmac_sha512[:32]    # Left 256-bits
         master_chain_code = seed_hmac_sha512[32:]  # Right 256-bits
         # Private Key so get Public key fingerprint
         pub_key = Keys.generate_pub_key(priv_key=master_priv_key, is_compressed=True)
-        key_hash160 = BtcHash.hash160(value=pub_key)
+        key_hash160 = Hashes.hash160(value=pub_key)
         master_fingerprint = key_hash160[:4]    # first 32-bits 4-bytes
         return (master_priv_key, master_chain_code, master_fingerprint)
 
@@ -94,7 +94,7 @@ class HdWallet(object):
         else:
             # Private Key so get Public key fingerprint
             pub_key = Keys.generate_pub_key(priv_key=parent_key, is_compressed=True)
-            key_hash160 = BtcHash.hash160(value=pub_key)
+            key_hash160 = Hashes.hash160(value=pub_key)
             # if is_private:
             #     # Private Key so get Public key fingerprint
             #     pub_key = Keys.generate_pub_key(priv_key=parent_key, is_compressed=True)
@@ -128,7 +128,7 @@ class HdWallet(object):
             hash_input = b"\x00"
             hash_input += parent_key
             hash_input += index.to_bytes(length=4, byteorder='big', signed=False)
-            hmac_sha512 = BtcHash.hmac_sha512(key=parent_chaincode, msg=hash_input)
+            hmac_sha512 = Hashes.hmac_sha512(key=parent_chaincode, msg=hash_input)
             child_chaincode = hmac_sha512[32:]  # Right 256-bits
             # PRIVATE child key
             child_private_key = hmac_sha512[:32]    # Left 256-bits
@@ -151,7 +151,7 @@ class HdWallet(object):
             pub_key = Keys.generate_pub_key(priv_key=parent_key, is_compressed=True)
             hash_input = pub_key
             hash_input += index.to_bytes(length=4, byteorder='big', signed=False)
-            hmac_sha512 = BtcHash.hmac_sha512(key=parent_chaincode, msg=hash_input)
+            hmac_sha512 = Hashes.hmac_sha512(key=parent_chaincode, msg=hash_input)
             child_chaincode = hmac_sha512[32:]  # Right 256-bits
             # PUBLIC child key
             child_public_key = hmac_sha512[:32]    # Left 256-bits

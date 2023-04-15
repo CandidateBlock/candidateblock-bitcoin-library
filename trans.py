@@ -1,5 +1,5 @@
 import hashlib
-from typing import List, Union
+from typing import List
 
 import ecdsa
 
@@ -12,42 +12,28 @@ OP_HASH160 = b'\xa9'
 OP_EQUALVERIFY = b'\x88'
 OP_CHECKSIG = b'\xac'
 
-SIGHASH_ALL = b'\x01'
+SIGHASH_ALL = 0x01
+SIGHASH_NONE = 0x02
+SIGHASH_SINGLE = 0x03
+SIGHASH_ANYONECANPAY = 0x80
 
 SATS_PER_BTC = 100000000
 
 
-def var_int(num: int) -> bytes:
-    if num < 0xfd:
-        ret = num.to_bytes(length=1, byteorder='little', signed=False)
-    elif num <= 0xffff:
-        ret = b'\xfd' + num.to_bytes(length=2, byteorder='little', signed=False)
-    elif num <= 0xffffffff:
-        ret = b'\xfe' + num.to_bytes(length=4, byteorder='little', signed=False)
-    elif num <= 0xffffffffffffffff:
-        ret = b'\xff' + num.to_bytes(length=8, byteorder='little', signed=False)
-    else:
-        raise ValueError(f"integer too large (8-Bytes max): {num}")
-
-    return ret
+def title(name: str) -> None:
+    CHARS = 120
+    txt = "\n"
+    txt += "*" * CHARS
+    txt += "\n"
+    txt += "* " + name + " "
+    txt += "*" * (CHARS - len(name) - 3)
+    txt += "\n"
+    txt += "*" * CHARS
+    return txt
 
 
-def var_string(input: bytes) -> bytes:
-    return var_int(num=len(input)) + input
-
-
-def pay_to_pub_key_hash(address: bytes) -> bytes:
-    script_pub_key = bytes()
-    script_pub_key += OP_DUP
-    script_pub_key += OP_HASH160
-    script_pub_key += var_string(input=address)
-    script_pub_key += OP_EQUALVERIFY
-    script_pub_key += OP_CHECKSIG
-    return script_pub_key
-
-
-def pay_to_script_hash(address: bytes) -> bytes:
-    pass
+def nice(name: str, input: bytes) -> None:
+    return f"{name}: ({len(input)}|{len(input)*8}) {input.hex()}"
 
 
 class Tx_in:
@@ -64,9 +50,9 @@ class Tx_in:
         tx_bytes += self.prev_tx_out_index.to_bytes(
             length=4, byteorder='little', signed=False)
         if self.script_sig is None:
-            tx_bytes += var_int(num=0)
+            tx_bytes += Tx.var_int(num=0)
         else:
-            tx_bytes += var_int(num=len(self.script_sig))
+            tx_bytes += Tx.var_int(num=len(self.script_sig))
             tx_bytes += self.script_sig
         tx_bytes += self.sequence.to_bytes(length=4, byteorder='little', signed=False)
         return tx_bytes
@@ -82,9 +68,9 @@ class Tx_out:
         tx_bytes += self.value_in_sats.to_bytes(length=8,
                                                 byteorder='little', signed=False)
         if self.script_pub_key is None:
-            tx_bytes += var_int(num=0)
+            tx_bytes += Tx.var_int(num=0)
         else:
-            tx_bytes += var_int(num=len(self.script_pub_key))
+            tx_bytes += Tx.var_int(num=len(self.script_pub_key))
             tx_bytes += self.script_pub_key
         return tx_bytes
 
@@ -110,7 +96,7 @@ class Tx:
             num_inputs = len(self.tx_ins)
         else:
             num_inputs = 0
-        tx_bytes += var_int(num=num_inputs)
+        tx_bytes += Tx.var_int(num=num_inputs)
         for tx_in in self.tx_ins:
             tx_bytes += tx_in.serialization()
         # Outputs
@@ -118,235 +104,250 @@ class Tx:
             num_outputs = len(self.tx_outs)
         else:
             num_outputs = 0
-        tx_bytes += var_int(num=num_outputs)
+        tx_bytes += Tx.var_int(num=num_outputs)
         for tx_out in self.tx_outs:
             tx_bytes += tx_out.serialization()
         # Locktime
         tx_bytes += self.lock_time.to_bytes(length=4, byteorder='little', signed=False)
         return tx_bytes
 
+    def tx_id(self):
+        #  Txid (double SHA256)
+        hash, check_sum = cbl.Hashes.double_sha256(value=self.serialization())
+        # hash_int = int.from_bytes(bytes=hash, byteorder='big', signed=False)
+        # return hash_int.to_bytes(length=32, byteorder='little', signed=False)
+        return hash[::-1]  # little endian vs big endian encodings
+
+    @staticmethod
+    def var_int(num: int) -> bytes:
+        if num < 0xfd:
+            ret = num.to_bytes(length=1, byteorder='little', signed=False)
+        elif num <= 0xffff:
+            ret = b'\xfd' + num.to_bytes(length=2, byteorder='little', signed=False)
+        elif num <= 0xffffffff:
+            ret = b'\xfe' + num.to_bytes(length=4, byteorder='little', signed=False)
+        elif num <= 0xffffffffffffffff:
+            ret = b'\xff' + num.to_bytes(length=8, byteorder='little', signed=False)
+        else:
+            raise ValueError(f"integer too large (8-Bytes max): {num}")
+
+        return ret
+
+    @staticmethod
+    def var_string(input: bytes) -> bytes:
+        return Tx.var_int(num=len(input)) + input
+
+    @staticmethod
+    def pay_to_pub_key_hash(address: bytes) -> bytes:
+        script_pub_key = bytes()
+        script_pub_key += OP_DUP
+        script_pub_key += OP_HASH160
+        script_pub_key += Tx.var_string(input=address)
+        script_pub_key += OP_EQUALVERIFY
+        script_pub_key += OP_CHECKSIG
+        return script_pub_key
+
+    @staticmethod
+    def pay_to_script_hash(address: bytes) -> bytes:
+        pass
+
+
+def derive_path(seed: bytes, path: str):
+    print(f"path: {path}")
+    path_array = cbl.HdWallet.parse_path(path=path)
+    print(f"path_array: {path_array}")
+    child_ext_key = b''
+    child_chain_code = b''
+    for element in path_array:
+        depth = element[0]
+        index = element[1]
+        is_private = True
+        is_mainnet = False
+        # Update parent for next loop
+        parent_key = child_ext_key
+        parent_chaincode = child_chain_code
+        if depth == 0:
+            # Master node
+            is_master = True
+            child_ext_key, child_chain_code, master_fingerprint = cbl.HdWallet.master_key_generation(
+                seed=seed)
+            print(f'Master Fingerprint: {master_fingerprint.hex()}')
+            index = 0
+        else:
+            # child node
+            is_master = False
+
+            child_ext_key, child_chain_code = cbl.HdWallet.child_key_derivation(
+                parent_key=parent_key, parent_chaincode=parent_chaincode, index=index, is_private=is_private)
+
+        new_xprv = cbl.HdWallet.encode(key=child_ext_key, chain_code=child_chain_code, parent_key=parent_key,
+                                       depth=depth, child=index, is_master=is_master, is_private=is_private, is_mainnet=is_mainnet)
+        if index >= 0x80000000:
+            str_index = str(index - 0x80000000) + 'h'
+        else:
+            str_index = str(index)
+        print(f"depth: {depth} | index: {str_index} | xprv: {new_xprv}")
+    # assert "tprv8g5rVr2zQzTvibuo1AsHxqFRPL337JFqYD4idspqP7rC61ixBs2dKQtD8QPX9ZeFiZXEAt1NEjRTjbztVB6EJf1Q4KCmAjTMv3E8GExGBww" == new_xprv
+
+    # Private to Public Key
+    is_private = False
+    new_public_key = cbl.Keys.generate_pub_key(
+        priv_key=child_ext_key, is_compressed=True)
+    new_xpub = cbl.HdWallet.encode(key=new_public_key, chain_code=child_chain_code, parent_key=parent_key,
+                                   depth=depth, child=index, is_master=is_master, is_private=is_private, is_mainnet=is_mainnet)
+    print(f"depth: {depth} | index: {str_index} | xpub: {new_xpub}")
+    # assert "tpubDCmteG5EZN9bc4watpXtNEuXxMYyGdSk7WfVvPs8oPeavVyipFrDVuW5JZriA924UgXrHfiXJK4N7GVtMZeqEeeRiqCjNvNVR2XcRnvshsV" == new_xpub
+
+    # Print Leaf
+    wif = cbl.Keys.priv_key_wif_encode(
+        priv_key=child_ext_key, is_compressed=True, is_mainnet=is_mainnet)
+    address = cbl.Keys.btc_address_p2pkh(pub_key=new_public_key, is_mainnet=is_mainnet)
+    public_key_hash160 = cbl.Hashes.hash160(value=new_public_key)
+    print(">" * 3 + " Leaf")
+    print(f"address:                   {address}")
+    print(f"Public  Key         (HEX): {new_public_key.hex()}")
+    print(f"Public  Key Hash160 (HEX): {public_key_hash160.hex()}")
+    print(f"Private Key         (WIF): {wif}")
+    print(f"Private Key         (HEX): {child_ext_key.hex()}")
+    return child_ext_key
+
 
 if __name__ == "__main__":
-    print("*" * 120 + "\n* Transaction\n" + "*" * 120)
+    print(title(name="Main"))
 
-    tx = Tx()
+    # 12 Words use 16-Bytes, 128-Bit entropy
+    sparrow_testnet = "wear snow pluck roast dilemma develop attend stock naive squeeze pigeon rose"
+    seed = cbl.Mnemonic.mnemonic_to_seed(
+        mnemonic_sentence=sparrow_testnet, passphrase="")
+    assert seed == bytes.fromhex(
+        '47c8c993c18b8480c78e5925ab70322c98d4f3eae68b9033bb175b6d6a1dc9bc7a001f1cef3821af3df42a42b7913081782164ca6ff064a4d9cf2911306776c7')
 
-    # Create an Input
-    signature = bytes.fromhex(
-        "3045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e3813")
-    # Uncompressed 0x04 = 512-Bits = 64-Bytes
-    pub_key = bytes.fromhex(
-        "0484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adf")
-    script_sig = bytes()
-    script_sig += var_int(num=len(signature + SIGHASH_ALL))
-    script_sig += signature
-    script_sig += SIGHASH_ALL
-    script_sig += var_int(num=len(pub_key))
-    script_sig += pub_key
+    # Get Address 0
+    path = "m/44'/1'/0'/0/0"
+    pri_key_0 = derive_path(seed=seed, path=path)
+    pub_key_0 = cbl.Keys.generate_pub_key(priv_key=pri_key_0, is_compressed=True)
+
+    # # Get Address 1
+    # path = "m/44'/1'/0'/0/1"
+    # pri_key_1 = derive_path(seed=seed, path=path)
+    # pub_key_1 = cbl.Keys.generate_pub_key(priv_key=pri_key_1, is_compressed=True)
+
+    print(title(name="Unsigned Transaction"))
+    prev_tx_out_hash = 0x1bc964691fef7f46e976b931e2b83936196f0c61bb1704f7f23d413d1c562ef8
+    prev_tx_out_index = 0
+    tx = Tx(version=2)
+    # Create Input 1
+    script_sig = None
     tx_in = Tx_in(
-        prev_tx_out_hash=0x7957a35fe64f80d234d76d83a2a8f1a0d8149a41d81de548f0a65a8a999f6f18,
-        prev_tx_out_index=0,
+        prev_tx_out_hash=prev_tx_out_hash,
+        prev_tx_out_index=prev_tx_out_index,
         script_sig=script_sig,
         sequence=0xffffffff)
     tx.tx_ins.append(tx_in)
-
     # Create an Output 1
-    address = bytes.fromhex("ab68025513c3dbd2f7b92a94e0581f5d50f654e7")
     tx_out = Tx_out(
-        value_in_sats=1500000,
-        script_pub_key=pay_to_pub_key_hash(address=address))
+        value_in_sats=9616,
+        script_pub_key=Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=pub_key_0)))
     tx.tx_outs.append(tx_out)
-
-    # Create an Output 2
-    address = bytes.fromhex("7f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a8")
-    tx_out = Tx_out(
-        value_in_sats=8450000,
-        script_pub_key=pay_to_pub_key_hash(address=address))
-    tx.tx_outs.append(tx_out)
-
-    # Serialize the Transcation
     print(tx.serialization().hex())
-
     # Correct Hex
-    correct_hex = bytes.fromhex("0100000001186f9f998a5aa6f048e51dd8419a14d8a0f1a8a2836dd734d2804fe65fa35779000000008b483045022100884d142d86652a3f47ba4746ec719bbfbd040a570b1deccbb6498c75c4ae24cb02204b9f039ff08df09cbe9f6addac960298cad530a863ea8f53982c09db8f6e381301410484ecc0d46f1918b30928fa0e4ed99f16a0fb4fde0735e7ade8416ab9fe423cc5412336376789d172787ec3457eee41c04f4938de5cc17b4a10fa336a8d752adfffffffff0260e31600000000001976a914ab68025513c3dbd2f7b92a94e0581f5d50f654e788acd0ef8000000000001976a9147f9b1a7fb68d60c536c2fd8aeaa53a8f3cc025a888ac00000000")
+    correct_hex = bytes.fromhex(
+        "0200000001f82e561c3d413df2f70417bb610c6f193639b8e231b976e9467fef1f6964c91b0000000000ffffffff0190250000000000001976a914bc2f4d0c573fa402b10e88f281e0b8129760597088ac00000000")
     assert tx.serialization() == correct_hex
 
-'''
-    # Version
-    version = int(1).to_bytes(length=4, byteorder='little', signed=False)
-    # Input Count
-    input_count = var_int(num=1)
-    # Inputs
-    # Input 1
-    txid = int(0x1f4ff528e85fb738413b5c1cad15a3dd245f695057f96ad05c9b2b6ea4f7e066).to_bytes(
-        length=32, byteorder='little', signed=False)
-    vout = int(1).to_bytes(length=4, byteorder='little', signed=False)
-    scriptsig = b''
-    scriptsig_size = var_int(num=0)
-    sequence = int(0xffffffff).to_bytes(length=4, byteorder='little', signed=False)
-    # Inputs
-    inputs = input_count
-    inputs += txid
-    inputs += vout
-    inputs += scriptsig_size
-    inputs += scriptsig
-    inputs += sequence
-    # Output Count
-    output_count = var_int(num=1)
-    # Output 1
-    amount = 10000
-    fee = 200
-    net = amount - fee
-    value = int(net).to_bytes(length=8, byteorder='little', signed=False)
-    # scriptpubkey = bytes.fromhex("00142045a28be0ccca8c3aa0a8c099aa9ea642f1f9fa")
-    # scriptpubkey_size = var_int(num=len(scriptpubkey))
+    print(title(name="Transaction Ready for Siging"))
+    script_sig = bytes()
+    script_sig += Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=pub_key_0))
+    tx_in = Tx_in(
+        prev_tx_out_hash=prev_tx_out_hash,
+        prev_tx_out_index=prev_tx_out_index,
+        script_sig=script_sig,
+        sequence=0xffffffff)
+    tx.tx_ins[0] = tx_in
+    signing_bytes = tx.serialization()
+    signing_bytes += int(SIGHASH_ALL).to_bytes(length=4,
+                                               byteorder='little', signed=False)
+    print(signing_bytes.hex())
+    # Check Txid (double SHA256)
+    hash, check_sum = cbl.Hashes.double_sha256(value=signing_bytes)
+    # print(nice(name="Txid be", input=hash))
+    # assert hash == bytes.fromhex(
+    #     "569e326a8cb13bf3f02e9010b17bc3ff8c9b820f3fd6c8a8332af7f99b7189ff")
 
-    pub_key = "mnQVR3Y3z28hDSwYGmbkmUG8WbVLriqrc7"
-    data = cbl.Base58.check_decode(b58=pub_key)
-    address_prefix, payload, checksum = data
+    # Set keys and Sign Txid
+    sk = ecdsa.SigningKey.from_string(
+        string=pri_key_0, curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
+    print(nice(name="sk     ", input=sk.to_string()))
+    assert sk.to_string() == pri_key_0
 
-    scriptpubkey = OP_DUP
-    scriptpubkey += OP_HASH160
-    scriptpubkey += var_int(num=len(payload))
-    scriptpubkey += payload
-    scriptpubkey += OP_EQUALVERIFY
-    scriptpubkey += OP_CHECKSIG
-    scriptpubkey_size = var_int(num=len(scriptpubkey))
-
-    # Outputs
-    outputs = output_count
-    outputs += value
-    outputs += scriptpubkey_size
-    outputs += scriptpubkey
-    # Locktime
-    locktime = int(0).to_bytes(length=4, byteorder='little', signed=False)
-
-    # Transaction Byte Sequence
-    unsigned_trans = version
-    unsigned_trans += inputs
-    unsigned_trans += outputs
-    unsigned_trans += locktime
-    print(unsigned_trans.hex())
-
-    unsigned_sparrow = bytes.fromhex(
-        "010000000166e0f7a46e2b9b5cd06af95750695f24dda315ad1c5c3b4138b75fe828f54f1f0100000000ffffffff0148260000000000001976a9144b8ff26577f5ea1ec25bc441481100c5ef2be3ba88ac00000000")
-    print(unsigned_sparrow.hex())
-
-    assert unsigned_sparrow == unsigned_trans
-
-    # To sign the transaction
-    # when we are serializing the transaction input that we wish to sign,
-    # the rule is to replace the encoding of the script_sig (which we don’t have,
-    # because again we’re just trying to produce it…) with the script_pubkey of the
-    # transaction output this input is pointing back to. All other transaction
-    # input’s script_sig is also replaced with an empty script, because those
-    # inputs can belong to many other owners who can individually and independently
-    # contribute their own signatures.
-
-    # address: mxfyzeVAorciyEiAHYbc7D2rEjiMZYXGB3
-    # Public Key (HEX): 03f2eac3976b9d90cae5df9c6d7809abbd1fd26e4e27a378406b33995fb5769f3c
-    # Private Key (WIF): cQFQrn83iqW9hr8SDTzA4WZRyJo4UMhtGBZXaCFgwFXsfhKV9SET
-    # Private Key (HEX): 4f96c5a6f152b7b9194430776fb543d1f23d3fb728e39cc03139725317bea82f
-    private_key = bytes.fromhex(
-        "4f96c5a6f152b7b9194430776fb543d1f23d3fb728e39cc03139725317bea82f")
-    public_key = cbl.Keys.generate_pub_key(priv_key=private_key, is_compressed=True)
-    public_key_addresss = cbl.Keys.btc_address_p2pkh(
-        pub_key=public_key, is_mainnet=False)
-    public_key_hash160 = cbl.BtcHash.hash160(value=public_key)
-
-    scriptsig = public_key_hash160
-    scriptsig_size = var_int(num=len(scriptsig))
-
-    # Inputs
-    inputs = input_count
-    inputs += txid
-    inputs += vout
-    inputs += scriptsig_size
-    inputs += scriptsig
-    inputs += sequence
-
-    # Transaction Byte Sequence
-    trans = version
-    trans += inputs
-    trans += outputs
-    trans += locktime
-    print(trans.hex())
-
-    # Now we can sign with our private key (owned from last transaction)
-    sk = ecdsa.SigningKey.from_string(string=private_key, curve=ecdsa.SECP256k1)
-    public_key_uncompressed = cbl.Keys.generate_pub_key(
-        priv_key=private_key, is_compressed=False)
     vk = sk.verifying_key
-    assert (b'\04' + vk.to_string()) == public_key_uncompressed
-    # Trans + SIGHASH_ALL
-    trans_hash, check_sum = cbl.BtcHash.double_sha256(
-        value=trans + int(1).to_bytes(length=4, byteorder='little', signed=False))
-    # signature = sk.sign_digest(digest=trans_hash, sigencode=ecdsa.util.sigencode_der)
-    # signature = sk.sign_digest(digest=trans_hash, sigencode=ecdsa.util.sigencode_der_canonize)
-    signature = sk.sign_digest_deterministic(
-        digest=trans_hash, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der)
+    print(nice(name="vk     ", input=vk.to_string()))
+    print(nice(name="vk Comp", input=vk.to_string("compressed")))
 
-    scriptsig = b''
-    scriptsig += var_int(num=len(signature) + 1)
-    scriptsig += signature
-    scriptsig += SIGHASH_ALL
-    scriptsig += var_int(num=len(public_key))
-    scriptsig += public_key
-    scriptsig_size = var_int(num=len(scriptsig))
+    sig = sk.sign_digest_deterministic(
+        digest=hash, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der, extra_entropy=b"", allow_truncate=False)
+    print(nice(name="SigOld1", input=sig))
 
-    # Correct values
-    ok = bytes.fromhex("473044022063c8ef5e5ef681845c82c30a6da84bf9ae236f01f6b285ee062ff248b39a99500220273f382651e4e5539ecaf7a8937a44294a9d0d6878285a55a0ca786867d5798a012103f2eac3976b9d90cae5df9c6d7809abbd1fd26e4e27a378406b33995fb5769f3c")
-    ok_sig = ok[:ok[0] + 1]
-    ok_pub_key = ok[-34:]
-    print("-" * 120)
-    print(f"scriptsig: {ok.hex(): <20}")
-    print(f"sig: {ok_sig.hex(): <20}")
-    print(f"PubKey: {ok_pub_key.hex(): <20}")
+    # In Bitcoin to save two bytes
+    # DER of signature can not be > 70 bytes long
+    # use counter as extra entropy until <= 70 bytes long
+    # 71-byte, 72-byte, and 73-byte-signatures can be observed.
+    # Basically the DER schema for encoding ECDSA signed messages puts an extra
+    # byte 0x00 infront of the 32-Byte R & S number of the most significant bit
+    # of R & S is set - as this means signed interger (which is confusing).
+    counter = 1
+    while len(sig) > 70:
+        extra_entropy = counter.to_bytes(length=32, byteorder='little', signed=False)
+        sig = sk.sign_digest_deterministic(
+            digest=hash, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der, extra_entropy=extra_entropy, allow_truncate=False)
+        print(nice(name="SigOldX", input=sig))
+        counter += 1
+        # just in case we get in infinite loop for some reason
+        if counter > 200:
+            break
+    print(nice(name="SigOldF", input=sig))
 
-    # Inputs
-    inputs = input_count
-    inputs += txid
-    inputs += vout
-    inputs += scriptsig_size
-    inputs += scriptsig
-    inputs += sequence
+    assert vk.verify_digest(signature=sig, digest=hash,
+                            sigdecode=ecdsa.util.sigdecode_der, allow_truncate=False) is True
 
-    # Transaction Byte Sequence
-    trans = version
-    trans += inputs
-    trans += outputs
-    trans += locktime
-    print(trans.hex())
+    # correct_sig_der = bytes.fromhex(
+    #     "304402201903ca8e1c52e861dc57bee84bd67273f25b88270ba95c974dcab651de08a05f02206044d68b732d88446e6c374b38ffe3bb74d2c04ba6919e93b4927b7cde7a26ea")
+    # print(nice(name="corsder", input=correct_sig_der))
+    # assert sig == correct_sig_der
 
-    sparrow_signed = bytes.fromhex("010000000166e0f7a46e2b9b5cd06af95750695f24dda315ad1c5c3b4138b75fe828f54f1f010000006a473044022063c8ef5e5ef681845c82c30a6da84bf9ae236f01f6b285ee062ff248b39a99500220273f382651e4e5539ecaf7a8937a44294a9d0d6878285a55a0ca786867d5798a012103f2eac3976b9d90cae5df9c6d7809abbd1fd26e4e27a378406b33995fb5769f3cffffffff0148260000000000001976a9144b8ff26577f5ea1ec25bc441481100c5ef2be3ba88ac00000000")
+    # New Sig routine
+    grind = True
+    sig = cbl.py_secp256k1.ecdsa_sign(hash, pri_key_0)
+    print(nice(name="SigNew1", input=sig))
+    if grind:
+        counter = 1
+        while len(sig) > 70:
+            sig = cbl.py_secp256k1.ecdsa_sign(
+                hash, pri_key_0, None, counter.to_bytes(32, 'little'))
+            print(nice(name="SigNewX", input=sig))
+            counter += 1
+            # just in case we get in infinite loop for some reason
+            if counter > 200:
+                break
+    print(nice(name="SigNewF", input=sig))
 
-    print(sparrow_signed == trans)
-    pass
-'''
+    print(title(name="Signed Transaction"))
+    # Update Txin for correctly signed data
+    final = sig
+    final += SIGHASH_ALL.to_bytes(length=1, byteorder='little', signed=False)
+    script_sig = bytes()
+    script_sig += Tx.var_int(num=len(final))
+    script_sig += final
+    script_sig += Tx.var_int(num=len(pub_key_0))
+    script_sig += pub_key_0
+    tx_in = Tx_in(
+        prev_tx_out_hash=prev_tx_out_hash,
+        prev_tx_out_index=prev_tx_out_index,
+        script_sig=script_sig,
+        sequence=0xffffffff)
+    tx.tx_ins[0] = tx_in
+    print(tx.serialization().hex())
+    print(nice(name="Txid le", input=tx.tx_id()))
 
-
-'''
-LSig    47
-0x30    30
-Lrs     44
-0x02    02
-Lr      20 
-Sigr    63c8ef5e5ef681845c82c30a6da84bf9ae236f01f6b285ee062ff248b39a9950
-0x02    02
-Ls      20
-Sigs    273f382651e4e5539ecaf7a8937a44294a9d0d6878285a55a0ca786867d5798a
-0x01    01
-'''
-
-'''
-LSig    48    
-0x30    30 Start
-lrs     45
-0x02    02 Integer
-lr      21 (33 bytes)
-Sigr    00ac1d347347d9de42965c8945e96bec43a6279caf48af8c57c156df8a88f672ef
-0x02    02 Integer
-ls      20 (32 bytes)
-Sigs    7e0886b0cad1dd15c727b7c2459afe2c4699c8a1fc75c4628a26ba364a224acb
-0x01    01
-'''
+    final_signed_trans = bytes.fromhex("0200000001f82e561c3d413df2f70417bb610c6f193639b8e231b976e9467fef1f6964c91b000000006a47304402205fc18f32af2c98f0abb2342e2c8956fec6a1bf74f64cef8bc49c9bc7a8e5e81d02205fda0ca5ab27a99585ef2d984dd6c45888833062cdb8f8409adeca389ee5a690012103f2eac3976b9d90cae5df9c6d7809abbd1fd26e4e27a378406b33995fb5769f3cffffffff0190250000000000001976a914bc2f4d0c573fa402b10e88f281e0b8129760597088ac00000000")
+    assert tx.serialization() == final_signed_trans

@@ -1,4 +1,4 @@
-# Copyright (c) 2022 CandidateBlock
+# Copyright (c) 2023 CandidateBlock
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
@@ -7,7 +7,7 @@
 
 import os
 
-from .btc_hash import BtcHash
+from .hashes import Hashes
 from .mnem_bip39_word_list import bip39_english
 
 
@@ -95,7 +95,7 @@ class Mnemonic(object):
         entropy_bits, entropy_checksum_bits, checksum_bits = self._words_to_bits(
             words=words)
         # SHA-256 of entropy AS padded HEX STRING not integer
-        entropy_sha256 = BtcHash.sha256(entropy)
+        entropy_sha256 = Hashes.sha256(entropy)
         entropy_sha256_int = int.from_bytes(
             entropy_sha256, byteorder='big', signed=False)
 
@@ -149,7 +149,7 @@ class Mnemonic(object):
         # SHA-256 of entropy AS padded HEX STRING not integer
         entropy = entropy_int.to_bytes(length=int(
             entropy_bits / 8), byteorder='big', signed=False)
-        entropy_sha256 = BtcHash.sha256(entropy)
+        entropy_sha256 = Hashes.sha256(entropy)
         entropy_sha256_int = int.from_bytes(
             entropy_sha256, byteorder='big', signed=False)
 
@@ -204,6 +204,6 @@ class Mnemonic(object):
         mnemonic_bytes = mnemonic_sentence.encode('utf-8')
         passphrase = 'mnemonic' + passphrase
         passphrase_bytes = passphrase.encode('utf-8')
-        stretched_bytes = BtcHash.pbkdf2_hmac(
+        stretched_bytes = Hashes.pbkdf2_hmac(
             password=mnemonic_bytes, salt=passphrase_bytes)
         return stretched_bytes[:64]
