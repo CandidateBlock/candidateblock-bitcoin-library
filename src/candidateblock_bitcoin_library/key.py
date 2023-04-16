@@ -1,5 +1,6 @@
 """
 Copy-paste from key.py in bitcoin test_framework.
+https://github.com/bitcoin/bitcoin/blob/master/test/functional/test_framework/key.py
 This is a fallback option if the library can't do ctypes bindings to secp256k1 library.
 """
 import random

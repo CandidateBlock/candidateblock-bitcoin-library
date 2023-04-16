@@ -111,11 +111,9 @@ class Tx:
         tx_bytes += self.lock_time.to_bytes(length=4, byteorder='little', signed=False)
         return tx_bytes
 
-    def tx_id(self):
+    def get_txid(self):
         #  Txid (double SHA256)
         hash, check_sum = cbl.Hashes.double_sha256(value=self.serialization())
-        # hash_int = int.from_bytes(bytes=hash, byteorder='big', signed=False)
-        # return hash_int.to_bytes(length=32, byteorder='little', signed=False)
         return hash[::-1]  # little endian vs big endian encodings
 
     @staticmethod
@@ -213,28 +211,43 @@ def derive_path(seed: bytes, path: str):
 
 
 if __name__ == "__main__":
-    print(title(name="Main"))
-
-    # 12 Words use 16-Bytes, 128-Bit entropy
     sparrow_testnet = "wear snow pluck roast dilemma develop attend stock naive squeeze pigeon rose"
+    derivation = "m/44'/1'/0'"
+    prev_tx_out_hash = 0x7fcf73bee8342a52395792509cba8a3f9a710093625229363793ed561a7b9d70
+    prev_tx_out_index = 0
+    correct_unsigned_trans_hex = bytes.fromhex(
+        "0200000001709d7b1a56ed9337362952629300719a3f8aba9c50925739522a34e8be73cf7f0000000000ffffffff0288130000000000001976a9149f565e794f93120b1a79284442b01e85cd4b6faf88ac66100000000000001976a9140164af143bf8816d4a0bfccfb56916867b92671488ac00000000")
+    correct_signed_trans = bytes.fromhex(
+        "0200000001709d7b1a56ed9337362952629300719a3f8aba9c50925739522a34e8be73cf7f000000006a4730440220118ad660344b2556809b4c626fb7009adbde715d0a5ba4c7c68905c395ac41ed022029552547b4fa4e4ca50d8804ee7f6b78eb8ede7ae665cdce4e2561d6622ac30a012103f2eac3976b9d90cae5df9c6d7809abbd1fd26e4e27a378406b33995fb5769f3cffffffff0288130000000000001976a9149f565e794f93120b1a79284442b01e85cd4b6faf88ac66100000000000001976a9140164af143bf8816d4a0bfccfb56916867b92671488ac00000000")
+    correct_txid = bytes.fromhex(
+        "96b57699c804ac04d8c2d7d6a10c401622e61c1c8878dab2dc550a78330268d4")
+
+    print(title(name="Main"))
     seed = cbl.Mnemonic.mnemonic_to_seed(
         mnemonic_sentence=sparrow_testnet, passphrase="")
-    assert seed == bytes.fromhex(
-        '47c8c993c18b8480c78e5925ab70322c98d4f3eae68b9033bb175b6d6a1dc9bc7a001f1cef3821af3df42a42b7913081782164ca6ff064a4d9cf2911306776c7')
 
-    # Get Address 0
-    path = "m/44'/1'/0'/0/0"
-    pri_key_0 = derive_path(seed=seed, path=path)
-    pub_key_0 = cbl.Keys.generate_pub_key(priv_key=pri_key_0, is_compressed=True)
+    # Get Spending Address 0
+    full_path = derivation + "/0/0"
+    spend_pri_key_0 = derive_path(seed=seed, path=full_path)
+    spend_pub_key_0 = cbl.Keys.generate_pub_key(
+        priv_key=spend_pri_key_0, is_compressed=True)
 
-    # # Get Address 1
-    # path = "m/44'/1'/0'/0/1"
-    # pri_key_1 = derive_path(seed=seed, path=path)
-    # pub_key_1 = cbl.Keys.generate_pub_key(priv_key=pri_key_1, is_compressed=True)
+    # Get Change Address 0
+    full_path = derivation + "/1/0"
+    change_pri_key_0 = derive_path(seed=seed, path=full_path)
+    change_pub_key_0 = cbl.Keys.generate_pub_key(
+        priv_key=change_pri_key_0, is_compressed=True)
+
+    nunchuk_testnet = "under pause uncover flat pole candy also sure curious dizzy choose minimum"
+    seed = cbl.Mnemonic.mnemonic_to_seed(
+        mnemonic_sentence=nunchuk_testnet, passphrase="")
+    # Get receiving address 0
+    full_path = derivation + "/0/0"
+    receiving_pri_key_0 = derive_path(seed=seed, path=full_path)
+    receiving_pub_key_0 = cbl.Keys.generate_pub_key(
+        priv_key=receiving_pri_key_0, is_compressed=True)
 
     print(title(name="Unsigned Transaction"))
-    prev_tx_out_hash = 0x1bc964691fef7f46e976b931e2b83936196f0c61bb1704f7f23d413d1c562ef8
-    prev_tx_out_index = 0
     tx = Tx(version=2)
     # Create Input 1
     script_sig = None
@@ -244,20 +257,24 @@ if __name__ == "__main__":
         script_sig=script_sig,
         sequence=0xffffffff)
     tx.tx_ins.append(tx_in)
-    # Create an Output 1
+
+    # Create an Output 1 - Payment
     tx_out = Tx_out(
-        value_in_sats=9616,
-        script_pub_key=Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=pub_key_0)))
+        value_in_sats=5000,
+        script_pub_key=Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=receiving_pub_key_0)))
+    tx.tx_outs.append(tx_out)
+    # Create an Output 2 - Change
+    tx_out = Tx_out(
+        value_in_sats=4198,
+        script_pub_key=Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=change_pub_key_0)))
     tx.tx_outs.append(tx_out)
     print(tx.serialization().hex())
     # Correct Hex
-    correct_hex = bytes.fromhex(
-        "0200000001f82e561c3d413df2f70417bb610c6f193639b8e231b976e9467fef1f6964c91b0000000000ffffffff0190250000000000001976a914bc2f4d0c573fa402b10e88f281e0b8129760597088ac00000000")
-    assert tx.serialization() == correct_hex
+    assert tx.serialization() == correct_unsigned_trans_hex
 
     print(title(name="Transaction Ready for Siging"))
     script_sig = bytes()
-    script_sig += Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=pub_key_0))
+    script_sig += Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=spend_pub_key_0))
     tx_in = Tx_in(
         prev_tx_out_hash=prev_tx_out_hash,
         prev_tx_out_index=prev_tx_out_index,
@@ -276,9 +293,9 @@ if __name__ == "__main__":
 
     # Set keys and Sign Txid
     sk = ecdsa.SigningKey.from_string(
-        string=pri_key_0, curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
+        string=spend_pri_key_0, curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
     print(nice(name="sk     ", input=sk.to_string()))
-    assert sk.to_string() == pri_key_0
+    assert sk.to_string() == spend_pri_key_0
 
     vk = sk.verifying_key
     print(nice(name="vk     ", input=vk.to_string()))
@@ -317,13 +334,13 @@ if __name__ == "__main__":
 
     # New Sig routine
     grind = True
-    sig = cbl.py_secp256k1.ecdsa_sign(hash, pri_key_0)
+    sig = cbl.py_secp256k1.ecdsa_sign(hash, spend_pri_key_0)
     print(nice(name="SigNew1", input=sig))
     if grind:
         counter = 1
         while len(sig) > 70:
             sig = cbl.py_secp256k1.ecdsa_sign(
-                hash, pri_key_0, None, counter.to_bytes(32, 'little'))
+                hash, spend_pri_key_0, None, counter.to_bytes(32, 'little'))
             print(nice(name="SigNewX", input=sig))
             counter += 1
             # just in case we get in infinite loop for some reason
@@ -338,16 +355,15 @@ if __name__ == "__main__":
     script_sig = bytes()
     script_sig += Tx.var_int(num=len(final))
     script_sig += final
-    script_sig += Tx.var_int(num=len(pub_key_0))
-    script_sig += pub_key_0
+    script_sig += Tx.var_int(num=len(spend_pub_key_0))
+    script_sig += spend_pub_key_0
     tx_in = Tx_in(
         prev_tx_out_hash=prev_tx_out_hash,
         prev_tx_out_index=prev_tx_out_index,
         script_sig=script_sig,
         sequence=0xffffffff)
     tx.tx_ins[0] = tx_in
-    print(tx.serialization().hex())
-    print(nice(name="Txid le", input=tx.tx_id()))
-
-    final_signed_trans = bytes.fromhex("0200000001f82e561c3d413df2f70417bb610c6f193639b8e231b976e9467fef1f6964c91b000000006a47304402205fc18f32af2c98f0abb2342e2c8956fec6a1bf74f64cef8bc49c9bc7a8e5e81d02205fda0ca5ab27a99585ef2d984dd6c45888833062cdb8f8409adeca389ee5a690012103f2eac3976b9d90cae5df9c6d7809abbd1fd26e4e27a378406b33995fb5769f3cffffffff0190250000000000001976a914bc2f4d0c573fa402b10e88f281e0b8129760597088ac00000000")
-    assert tx.serialization() == final_signed_trans
+    print(nice(name="FinalTX", input=tx.serialization()))
+    print(nice(name="Txid le", input=tx.get_txid()))
+    assert tx.serialization() == correct_signed_trans
+    assert tx.get_txid() == correct_txid
