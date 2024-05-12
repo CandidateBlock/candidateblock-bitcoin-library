@@ -1,5 +1,7 @@
-import copy
+import hashlib
 from typing import List
+
+import ecdsa
 
 import candidateblock_bitcoin_library as cbl
 
@@ -147,70 +149,6 @@ class Tx:
     def pay_to_script_hash(address: bytes) -> bytes:
         pass
 
-    def script_sig_p2pkh(signature: bytes, pubkey: bytes, sighash: int = SIGHASH_ALL) -> bytes:
-        sec = pubkey
-        der = signature
-        der += int(sighash).to_bytes(length=1, byteorder='little', signed=False)
-        # Output
-        data = bytes()
-        data += Tx.var_string(input=der)
-        data += Tx.var_string(input=sec)
-        return data
-
-    def sighash_legacy(self, input_index, script_pubkey, sighash=SIGHASH_ALL):
-        script_sig = bytes()
-        script_sig += Tx.pay_to_pub_key_hash(
-            address=cbl.Hashes.hash160(value=script_pubkey))
-
-        # Copy TX stored in class, to override tx_ins[].script_sig for signing
-        tx_to_sign = Tx()
-        tx_to_sign.version = self.version
-        tx_to_sign.has_witness = self.has_witness
-        tx_to_sign.tx_ins = copy.deepcopy(self.tx_ins)
-        tx_to_sign.tx_outs = self.tx_outs
-        tx_to_sign.witness = self.witness
-        tx_to_sign.lock_time = self.lock_time
-        for i, inp in enumerate(self.tx_ins):
-            # Are we signing this input with script_pubkey
-            if input_index == i:
-                new_tx_in = Tx_in(
-                    prev_tx_out_hash=inp.prev_tx_out_hash,
-                    prev_tx_out_index=inp.prev_tx_out_index,
-                    script_sig=script_sig,
-                    sequence=0xffffffff)
-            else:
-                # Not signing this input = empty script_sig
-                new_tx_in = Tx_in(
-                    prev_tx_out_hash=inp.prev_tx_out_hash,
-                    prev_tx_out_index=inp.prev_tx_out_index,
-                    script_sig=b"",
-                    sequence=0xffffffff)
-            tx_to_sign.tx_ins[i] = new_tx_in
-        signing_bytes = tx_to_sign.serialization()
-        signing_bytes += int(SIGHASH_ALL).to_bytes(length=4,
-                                                   byteorder='little', signed=False)
-        print(signing_bytes.hex())
-        # Get Txid (double SHA256)
-        hash, check_sum = cbl.Hashes.double_sha256(value=signing_bytes)
-        return hash
-
-    def sign(self, hash: bytes, pri_key: bytes, grind: bool = True):
-        # New Sign transaction
-        sig = cbl.py_secp256k1.ecdsa_sign(hash, pri_key)
-        print(nice(name="SigNew1", input=sig))
-        if grind:
-            counter = 1
-            while len(sig) > 70:
-                sig = cbl.py_secp256k1.ecdsa_sign(
-                    hash, pri_key, None, counter.to_bytes(32, 'little'))
-                print(nice(name="SigNewX", input=sig))
-                counter += 1
-                # just in case we get in infinite loop for some reason
-                if counter > 200:
-                    break
-        print(nice(name="SigNewF", input=sig))
-        return sig
-
 
 def derive_path(seed: bytes, path: str):
     print(f"path: {path}")
@@ -271,33 +209,33 @@ def derive_path(seed: bytes, path: str):
 
 
 if __name__ == "__main__":
-    cc0_testnet = "bitter opinion column spoon tip they cliff butter print test artwork expose"
-    cc1_testnet = "front asthma oyster shoot view jungle matter either neither hope index file"
+    sparrow_testnet = "wear snow pluck roast dilemma develop attend stock naive squeeze pigeon rose"
+    nunchuk_testnet = "under pause uncover flat pole candy also sure curious dizzy choose minimum"
 
     derivation = "m/44'/1'/0'"
     correct_unsigned_trans_hex = bytes.fromhex(
-        "0200000001bebbbfc955f90193b4be28e81ee3980212211a00de2c8fc87c003ff5b38eefc50000000000ffffffff01430a0000000000001976a914956729de96774428d4e4d82fb242ab504112f8b488ac00000000")
+        "020000000108cf636c263017274fcf5018e8011ac6a05d29a09858868931178de3237fdd770000000000ffffffff0108120000000000001976a91444afd3d7638352df84d7112f2e98038620080dc188ac00000000")
     correct_signed_trans = bytes.fromhex(
-        "0200000001bebbbfc955f90193b4be28e81ee3980212211a00de2c8fc87c003ff5b38eefc5000000006a47304402201c0dbd540c1d9d9f2079b33e3e0db374f19269422a038f1bf54e7ded8e8d66fa0220212a8a3f0cebec78cb12c3ed9fc21fa65d6cf055ea9a8309e17de36aeadc375801210399fb50578b99104c6d6f55351d918998f0a12746b094db5fa15b36ab64c76021ffffffff01430a0000000000001976a914956729de96774428d4e4d82fb242ab504112f8b488ac00000000")
+        "0200000002d4680233780a55dcb2da78881c1ce62216400ca1d6d7c2d804ac04c89976b596000000006a47304402200769e828a0edf2fbbc2fa89fdddbdd83950d2698342f93b56c3868ffe1740aef02204bf106f29922178f45d9cf8cd427a73579fb5698834d1f31cff47a61a713d5a8012102c0c42a8154426866d003de54d89e6e09deb19ccb169a5bd0056e56c05c2140f6ffffffffe47d537eed9c4301ab7f2966f6facbdafe4f17e6b9cf21c120ed4b3f5b548dde000000006a47304402205278bd6dfbb143f820782a9803045b52e8e5bda9b8dd7250a30205986a5875420220496aea89ec41857572ce0a9077484bff9e8ca0c3d9e40cc5c460ab0b5ea9ef5c0121034a741361c6c4fb4ccc28177996be30eecd2441fea8591dab7bcb1ae7a07c37cdffffffff020f020000000000001976a9141a42b77a5531eee28e02d1c96b56c4643733497688acec130000000000001976a9144b8ff26577f5ea1ec25bc441481100c5ef2be3ba88ac00000000")
     correct_txid = bytes.fromhex(
-        "ce751350d16ca732b6acdc70361ac15c20fd4aaf82ce5b6bff51ccf40b538f49")
+        "cf111fe7241a62d2c9cea8e0886ead17c65f34f9e83cb44214ff9bd96fe997bb")
 
     print(title(name="Main"))
-    seed_cc0 = cbl.Mnemonic.mnemonic_to_seed(
-        mnemonic_sentence=cc0_testnet, passphrase="")
-    seed_cc1 = cbl.Mnemonic.mnemonic_to_seed(
-        mnemonic_sentence=cc1_testnet, passphrase="")
+    seed_sparrow = cbl.Mnemonic.mnemonic_to_seed(
+        mnemonic_sentence=sparrow_testnet, passphrase="")
+    seed_nunchuk = cbl.Mnemonic.mnemonic_to_seed(
+        mnemonic_sentence=nunchuk_testnet, passphrase="")
 
     # *** Inputs
     # Get Spending Address 0
-    full_path = derivation + "/0/3"
-    spend_pri_key_0 = derive_path(seed=seed_cc0, path=full_path)
+    full_path = derivation + "/0/1"
+    spend_pri_key_0 = derive_path(seed=seed_sparrow, path=full_path)
     spend_pub_key_0 = cbl.Keys.generate_pub_key(
         priv_key=spend_pri_key_0, is_compressed=True)
 
     # # Get Spending Address 1
     # full_path = derivation + "/0/1"
-    # spend_pri_key_1 = derive_path(seed=seed_cc0, path=full_path)
+    # spend_pri_key_1 = derive_path(seed=seed_nunchuk, path=full_path)
     # spend_pub_key_1 = cbl.Keys.generate_pub_key(
     #     priv_key=spend_pri_key_1, is_compressed=True)
 
@@ -308,33 +246,28 @@ if __name__ == "__main__":
     # change_pub_key_0 = cbl.Keys.generate_pub_key(
     #     priv_key=change_pri_key_0, is_compressed=True)
 
-    # # Get receiving address 0
-    # full_path = derivation + "/0/2"
-    # receiving_pri_key_0 = derive_path(seed=seed_cc1, path=full_path)
-    # receiving_pub_key_0 = cbl.Keys.generate_pub_key(
-    #     priv_key=receiving_pri_key_0, is_compressed=True)
-
-    # Set receiving address 0
-    receiving_pub_key_0_address = "mu8vZZnTqcW1k6hhgnyQB6anNC8vvCF7sq"
-    receiving_pub_key_0_hash160 = bytes.fromhex(
-        "956729de96774428d4e4d82fb242ab504112f8b4")
+    # Get receiving address 0
+    full_path = derivation + "/0/2"
+    receiving_pri_key_0 = derive_path(seed=seed_nunchuk, path=full_path)
+    receiving_pub_key_0 = cbl.Keys.generate_pub_key(
+        priv_key=receiving_pri_key_0, is_compressed=True)
 
     print(title(name="Unsigned Transaction"))
     tx = Tx(version=2)
 
-    # Create Input 0 (2780)
+    # Create Input 1 (4808)
     script_sig = None
     tx_in = Tx_in(
-        prev_tx_out_hash=0xc5ef8eb3f53f007cc88f2cde001a21120298e31ee828beb49301f955c9bfbbbe,
+        prev_tx_out_hash=0x77dd7f23e38d173189865898a0295da0c61a01e81850cf4f271730266c63cf08,
         prev_tx_out_index=0,
         script_sig=script_sig,
         sequence=0xffffffff)
     tx.tx_ins.append(tx_in)
 
-    # # Create Input 1 (4808)
+    # # Create Input 2 (1000)
     # script_sig = None
     # tx_in = Tx_in(
-    #     prev_tx_out_hash=0x77dd7f23e38d173189865898a0295da0c61a01e81850cf4f271730266c63cf08,
+    #     prev_tx_out_hash=0xde8d545b3f4bed20c121cfb9e6174ffedacbfaf666297fab01439ced7e537de4,
     #     prev_tx_out_index=0,
     #     script_sig=script_sig,
     #     sequence=0xffffffff)
@@ -342,8 +275,8 @@ if __name__ == "__main__":
 
     # Create an Output 1 - Payment
     tx_out = Tx_out(
-        value_in_sats=2627,
-        script_pub_key=Tx.pay_to_pub_key_hash(address=receiving_pub_key_0_hash160))
+        value_in_sats=4616,
+        script_pub_key=Tx.pay_to_pub_key_hash(address=cbl.Hashes.hash160(value=receiving_pub_key_0)))
     tx.tx_outs.append(tx_out)
     # # Create an Output 2 - Payment
     # tx_out = Tx_out(
@@ -356,22 +289,103 @@ if __name__ == "__main__":
     assert tx.serialization() == correct_unsigned_trans_hex
 
     print(title(name="Transaction Ready for Siging"))
-    for i, tx_in in enumerate(tx.tx_ins):
-        if i == 0:
-            script_prikey = spend_pri_key_0
-            script_pubkey = spend_pub_key_0
-        else:
-            pass
-            # script_prikey = spend_pri_key_1
-            # script_pubkey = spend_pub_key_1
+    script_sig = bytes()
+    script_sig += Tx.pay_to_pub_key_hash(
+        address=cbl.Hashes.hash160(value=spend_pub_key_0))
+    tx_in_signed = Tx_in(
+        prev_tx_out_hash=tx.tx_ins[0].prev_tx_out_hash,
+        prev_tx_out_index=tx.tx_ins[0].prev_tx_out_index,
+        script_sig=script_sig,
+        sequence=0xffffffff)
+    tx.tx_ins[0] = tx_in_signed
+    signing_bytes = tx.serialization()
+    signing_bytes += int(SIGHASH_ALL).to_bytes(length=4,
+                                               byteorder='little', signed=False)
+    print(signing_bytes.hex())
+    # Check Txid (double SHA256)
+    hash, check_sum = cbl.Hashes.double_sha256(value=signing_bytes)
+    # print(nice(name="Txid be", input=hash))
+    # assert hash == bytes.fromhex(
+    #     "569e326a8cb13bf3f02e9010b17bc3ff8c9b820f3fd6c8a8332af7f99b7189ff")
 
-        hash = tx.sighash_legacy(input_index=i, script_pubkey=script_pubkey)
-        sig = tx.sign(hash=hash, pri_key=script_prikey, grind=True)
-        tx_in.script_sig = Tx.script_sig_p2pkh(
-            signature=sig, pubkey=script_pubkey, sighash=SIGHASH_ALL)
+    # Set keys and Sign Txid
+    sk = ecdsa.SigningKey.from_string(
+        string=spend_pri_key_0, curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
+    print(nice(name="sk     ", input=sk.to_string()))
+    assert sk.to_string() == spend_pri_key_0
 
-    print(title(name="Finalised Transaction"))
-    print(tx.serialization().hex())
+    vk = sk.verifying_key
+    print(nice(name="vk     ", input=vk.to_string()))
+    print(nice(name="vk Comp", input=vk.to_string("compressed")))
+
+    sig = sk.sign_digest_deterministic(
+        digest=hash, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der, extra_entropy=b"", allow_truncate=False)
+    print(nice(name="SigOld1", input=sig))
+
+    # In Bitcoin to save two bytes
+    # DER of signature can not be > 70 bytes long
+    # use counter as extra entropy until <= 70 bytes long
+    # 71-byte, 72-byte, and 73-byte-signatures can be observed.
+    # Basically the DER schema for encoding ECDSA signed messages puts an extra
+    # byte 0x00 infront of the 32-Byte R & S number of the most significant bit
+    # of R & S is set - as this means signed interger (which is confusing).
+    counter = 1
+    while len(sig) > 70:
+        extra_entropy = counter.to_bytes(length=32, byteorder='little', signed=False)
+        sig = sk.sign_digest_deterministic(
+            digest=hash, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der, extra_entropy=extra_entropy, allow_truncate=False)
+        print(nice(name="SigOldX", input=sig))
+        counter += 1
+        # just in case we get in infinite loop for some reason
+        if counter > 200:
+            break
+    print(nice(name="SigOldF", input=sig))
+
+    assert vk.verify_digest(signature=sig, digest=hash,
+                            sigdecode=ecdsa.util.sigdecode_der, allow_truncate=False) is True
+
+    # correct_sig_der = bytes.fromhex(
+    #     "304402201903ca8e1c52e861dc57bee84bd67273f25b88270ba95c974dcab651de08a05f02206044d68b732d88446e6c374b38ffe3bb74d2c04ba6919e93b4927b7cde7a26ea")
+    # print(nice(name="corsder", input=correct_sig_der))
+    # assert sig == correct_sig_der
+
+    # New Sig routine
+    grind = True
+    sig = cbl.py_secp256k1.ecdsa_sign(hash, spend_pri_key_0)
+    print(nice(name="SigNew1", input=sig))
+    if grind:
+        counter = 1
+        while len(sig) > 70:
+            sig = cbl.py_secp256k1.ecdsa_sign(
+                hash, spend_pri_key_0, None, counter.to_bytes(32, 'little'))
+            print(nice(name="SigNewX", input=sig))
+            counter += 1
+            # just in case we get in infinite loop for some reason
+            if counter > 200:
+                break
+    print(nice(name="SigNewF", input=sig))
+
+    print(title(name="Signed Transaction"))
+    # Update Txin for correctly signed data
+    final = sig
+    final += SIGHASH_ALL.to_bytes(length=1, byteorder='little', signed=False)
+    script_sig = bytes()
+    script_sig += Tx.var_int(num=len(final))
+    script_sig += final
+    script_sig += Tx.var_int(num=len(spend_pub_key_0))
+    script_sig += spend_pub_key_0
+    tx_in = Tx_in(
+        prev_tx_out_hash=tx.tx_ins[0].prev_tx_out_hash,
+        prev_tx_out_index=tx.tx_ins[0].prev_tx_out_index,
+        script_sig=script_sig,
+        sequence=0xffffffff)
+    tx.tx_ins[0] = tx_in
+    print(nice(name="FinalTX", input=tx.serialization()))
     print(nice(name="Txid le", input=tx.get_txid()))
     assert tx.serialization() == correct_signed_trans
     assert tx.get_txid() == correct_txid
+
+'''
+0200000002d4680233780a55dcb2da78881c1ce62216400ca1d6d7c2d804ac04c89976b5960000000000ffffffffe47d537eed9c4301ab7f2966f6facbdafe4f17e6b9cf21c120ed4b3f5b548dde0000000000ffffffff0288130000000000001976a9144b8ff26577f5ea1ec25bc441481100c5ef2be3ba88acf4010000000000001976a9141a42b77a5531eee28e02d1c96b56c4643733497688ac00000000
+0200000002d4680233780a55dcb2da78881c1ce62216400ca1d6d7c2d804ac04c89976b5960000000000ffffffffe47d537eed9c4301ab7f2966f6facbdafe4f17e6b9cf21c120ed4b3f5b548dde0000000000ffffffff020f020000000000001976a9141a42b77a5531eee28e02d1c96b56c4643733497688acec130000000000001976a9144b8ff26577f5ea1ec25bc441481100c5ef2be3ba88ac00000000
+'''

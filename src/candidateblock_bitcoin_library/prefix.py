@@ -26,7 +26,8 @@ class Prefix(object):
     BIP_32_EXTENDED_PUBLIC_KEY = bytes.fromhex('0488B21E')   # Base58 = xpub
     BIP_32_EXTENDED_PRIVATE_KEY = bytes.fromhex('0488ADE4')  # Base58 = xprv
 
-    TESTNET_PAY_TO_PUBKEY_HASH = b'\x6F'                             # Base58 = m or n (P2PKH)
+    # Base58 = m or n (P2PKH)
+    TESTNET_PAY_TO_PUBKEY_HASH = b'\x6F'
     TESTNET_PAY_TO_SCRIPT_HASH = b'\xC4'                             # Base58 = 2 (P2SH)
     TESTNET_PRIVATE_KEY_WIF = b'\xEF'                                # Base58 = 9 or c
     TESTNET_BIP_32_EXTENDED_PUBLIC_KEY = bytes.fromhex('043587CF')   # Base58 = tpub

@@ -1,11 +1,9 @@
 # Dev install => pip install -r requirements.txt
 #   For developement install the package as editable "-e" option
-#   and install packages used for dev. eg: autopep8, flake8, pytest, etc
+#   and install packages used for dev. eg: pytest, etc
 #   sphinx is used to auto generate the documentation
 # setup.py has the packages required for production, install -e . also installs for dev
 -e .  
-autopep8  
-flake8
 pytest
 sphinx
 sphinx-build

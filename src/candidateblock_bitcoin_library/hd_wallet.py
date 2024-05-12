@@ -33,7 +33,7 @@ class HdWallet(object):
 
     HARDEND = 2**31  # 2^31 = 0x80000000
 
-    @ staticmethod
+    @staticmethod
     def master_key_generation(seed: bytes = b''):
         seed_hmac_sha512 = Hashes.hmac_sha512(key=b"Bitcoin seed", msg=seed)
         master_priv_key = seed_hmac_sha512[:32]    # Left 256-bits
@@ -115,7 +115,7 @@ class HdWallet(object):
         b58_check = Base58.check_encode(payload=extended_key)
         return b58_check
 
-    @ classmethod
+    @classmethod
     def child_key_derivation(self,
                              parent_key: bytes,
                              parent_chaincode: bytes,
